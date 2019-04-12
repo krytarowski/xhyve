@@ -45,6 +45,7 @@ CFLAGS_DBG := \
   -g
 
 CFLAGS := \
+  -pthread \
   -x c \
   -std=c11 \
   -fno-common \
@@ -64,4 +65,6 @@ CFLAGS := \
 
 LDFLAGS := \
   -lz \
+  -lpthread \
+  -lprop \
   $(LDFLAGS_DBG)
