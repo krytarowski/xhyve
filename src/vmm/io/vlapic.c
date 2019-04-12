@@ -32,6 +32,7 @@
 #include <strings.h>
 #include <errno.h>
 #include <xhyve/lock.h>
+#include <xhyve/support/strings.h>
 #include <xhyve/support/misc.h>
 #include <xhyve/support/atomic.h>
 #include <xhyve/support/specialreg.h>

@@ -49,6 +49,7 @@
 #include <md5.h>
 #endif
 
+#include <xhyve/support/bitset.h>
 #include <xhyve/support/misc.h>
 #include <xhyve/support/linker_set.h>
 #include <xhyve/xhyve.h>
