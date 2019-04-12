@@ -42,9 +42,17 @@
 #include <sys/param.h>
 #include <sys/uio.h>
 #include <sys/ioctl.h>
+#if defined(__APPLE__)
 #include <net/ethernet.h>
+#elif defined(__NetBSD__)
+#include <net/if_ether.h>
+#endif
 
+#if defined(__APPLE__)
 #include <CommonCrypto/CommonDigest.h>
+#elif defined(__NetBSD__)
+#include <md5.h>
+#endif
 
 #include <xhyve/support/misc.h>
 #include <xhyve/support/atomic.h>
@@ -669,7 +677,14 @@ pci_vtnet_init(struct pci_devinst *pi, char *opts)
 		snprintf(nstr, sizeof(nstr), "%d-%d-%s", pi->pi_slot,
 		    pi->pi_func, vmname);
 
+#if defined(__APPLE__)
         CC_MD5(nstr, (CC_LONG)strlen(nstr), digest);
+#elif defined(__NetBSD__)
+	MD5_CTX md5_ctx;
+	MD5Init(&md5_ctx);
+	MD5Update(&md5_ctx, opts, strlen(opts));
+	MD5Final(digest, &md5_ctx);
+#endif
 
 		sc->vsc_config.mac[0] = 0x00;
 		sc->vsc_config.mac[1] = 0xa0;

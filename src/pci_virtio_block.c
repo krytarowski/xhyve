@@ -43,7 +43,11 @@
 #include <sys/ioctl.h>
 #include <sys/disk.h>
 
+#if defined(__APPLE__)
 #include <CommonCrypto/CommonDigest.h>
+#elif defined(__NetBSD__)
+#include <md5.h>
+#endif
 
 #include <xhyve/support/misc.h>
 #include <xhyve/support/linker_set.h>
@@ -360,7 +364,14 @@ pci_vtblk_init(struct pci_devinst *pi, char *opts)
 	 * Create an identifier for the backing file. Use parts of the
 	 * md5 sum of the filename
 	 */
+#if defined(__NetBSD__)
+	MD5_CTX md5_ctx;
+	MD5Init(&md5_ctx);
+	MD5Update(&md5_ctx, opts, strlen(opts));
+	MD5Final(digest, &md5_ctx);
+#elif defined(__APPLE__)
     CC_MD5(opts, (CC_LONG)strlen(opts), digest);
+#endif
 	snprintf(sc->vbsc_ident, VTBLK_BLK_ID_BYTES, "BHYVE-%02X%02X-%02X%02X-%02X%02X",
 	    digest[0], digest[1], digest[2], digest[3], digest[4], digest[5]);
 
