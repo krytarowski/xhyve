@@ -634,6 +634,9 @@ vcpu_set_state_locked(struct vcpu *vcpu, enum vcpu_state newstate,
     bool from_idle)
 {
 	int error;
+#if defined(__NetBSD__)
+	struct timespec ts_now, rel_time;
+#endif
 	const struct timespec ts = {.tv_sec = 1, .tv_nsec = 0}; /* 1 second */
 
 	/*
@@ -645,8 +648,15 @@ vcpu_set_state_locked(struct vcpu *vcpu, enum vcpu_state newstate,
 		while (vcpu->state != VCPU_IDLE) {
 			pthread_mutex_lock(&vcpu->state_sleep_mtx);
 			vcpu_unlock(vcpu);
+#if defined(__APPLE__)
 			pthread_cond_timedwait_relative_np(&vcpu->state_sleep_cnd,
 				&vcpu->state_sleep_mtx, &ts);
+#else
+			clock_gettime(CLOCK_MONOTONIC, &ts_now);
+			timespecadd(&ts_now, &ts, &rel_time);
+			pthread_cond_timedwait(&vcpu->state_sleep_cnd,
+				&vcpu->state_sleep_mtx, &rel_time);
+#endif
 			vcpu_lock(vcpu);
 			pthread_mutex_unlock(&vcpu->state_sleep_mtx);
 			//msleep_spin(&vcpu->state, &vcpu->mtx, "vmstat", hz);
@@ -768,6 +778,9 @@ vm_handle_hlt(struct vm *vm, int vcpuid, bool intr_disabled)
 	struct vcpu *vcpu;
 	const char *wmesg;
 	int vcpu_halted, vm_halted;
+#if defined(__NetBSD__)
+	struct timespec ts_now, rel_time;
+#endif
 	const struct timespec ts = {.tv_sec = 1, .tv_nsec = 0}; /* 1 second */
 
 	KASSERT(!CPU_ISSET(((unsigned) vcpuid), &vm->halted_cpus),
@@ -828,8 +841,15 @@ vm_handle_hlt(struct vm *vm, int vcpuid, bool intr_disabled)
 		 */
 		pthread_mutex_lock(&vcpu->vcpu_sleep_mtx);
 		vcpu_unlock(vcpu);
+#if defined(__APPLE__)
 		pthread_cond_timedwait_relative_np(&vcpu->vcpu_sleep_cnd,
 			&vcpu->vcpu_sleep_mtx, &ts);
+#else
+		clock_gettime(CLOCK_MONOTONIC, &ts_now);
+		timespecadd(&ts_now, &ts, &rel_time);
+		pthread_cond_timedwait(&vcpu->state_sleep_cnd,
+			&vcpu->state_sleep_mtx, &rel_time);
+#endif
 		vcpu_lock(vcpu);
 		pthread_mutex_unlock(&vcpu->vcpu_sleep_mtx);
 		//msleep_spin(vcpu, &vcpu->mtx, wmesg, hz);
@@ -934,6 +954,9 @@ vm_handle_suspend(struct vm *vm, int vcpuid, bool *retu)
 {
 	int i, done;
 	struct vcpu *vcpu;
+#if defined(__NetBSD__)
+	struct timespec ts_now, rel_time;
+#endif
 	const struct timespec ts = {.tv_sec = 1, .tv_nsec = 0}; /* 1 second */
 
 	done = 0;
@@ -961,8 +984,15 @@ vm_handle_suspend(struct vm *vm, int vcpuid, bool *retu)
 
 			pthread_mutex_lock(&vcpu->vcpu_sleep_mtx);
 			vcpu_unlock(vcpu);
+#if defined(__APPLE__)
 			pthread_cond_timedwait_relative_np(&vcpu->vcpu_sleep_cnd,
 				&vcpu->vcpu_sleep_mtx, &ts);
+#else
+			clock_gettime(CLOCK_MONOTONIC, &ts_now);
+			timespecadd(&ts_now, &ts, &rel_time);
+			pthread_cond_timedwait(&vcpu->state_sleep_cnd,
+				&vcpu->state_sleep_mtx, &rel_time);
+#endif
 			vcpu_lock(vcpu);
 			pthread_mutex_unlock(&vcpu->vcpu_sleep_mtx);
 			//msleep_spin(vcpu, &vcpu->mtx, "vmsusp", hz);
