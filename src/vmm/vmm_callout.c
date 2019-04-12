@@ -27,10 +27,14 @@
 
 /* makeshift callout implementation based on OSv and FreeBSD */
 
+#include <sys/types.h>
+#include <sys/time.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 #include <pthread.h>
 #include <sys/time.h>
@@ -43,7 +47,11 @@
 #include <xhyve/support/misc.h>
 #include <xhyve/vmm/vmm_callout.h>
 
+#if defined(__APPLE__)
 #define callout_cmp(a, b) ((a)->timeout < (b)->timeout)
+#elif defined(__NetBSD__)
+#define callout_cmp(a, b) timespeccmp(&(a)->timeout, &(b)->timeout, <)
+#endif
 
 #if defined(__APPLE__)
 static mach_timebase_info_data_t timebase_info;
@@ -55,6 +63,7 @@ static struct callout *callout_queue;
 static bool work;
 static bool initialized = false;
 
+#if defined(__APPLE__)
 static inline uint64_t nanos_to_abs(uint64_t nanos) {
   return (nanos * timebase_info.denom) / timebase_info.numer;
 }
@@ -99,6 +108,7 @@ void getmicrotime(struct timeval *tv) {
   tv->tv_sec = (long) sns;
   tv->tv_usec = (int) ((ns - sns) / 1000);
 }
+#endif
 
 static void callout_insert(struct callout *c) {
   struct callout *node = callout_queue;
@@ -163,8 +173,6 @@ static void *callout_thread_func(UNUSED void *arg) {
   struct timespec ts;
 #if defined(__APPLE__)
   uint64_t delta, mat;
-#elif defined(__NetBSD__)
-  struct timespec ts, rel_time;
 #endif
   int ret;
 
@@ -200,7 +208,7 @@ static void *callout_thread_func(UNUSED void *arg) {
       ret = pthread_cond_timedwait_relative_np(&callout_cnd, &callout_mtx, &ts);
 #elif defined(__NetBSD__)
       clock_gettime(CLOCK_MONOTONIC, &ts);
-      if (timespeccmp(ts, c->timeout, >=) {
+      if (timespeccmp(&ts, &c->timeout, >=)) {
         ret = ETIMEDOUT;
         break;
       }
@@ -301,7 +309,7 @@ int callout_reset_sbt(struct callout *c, sbintime_t sbt,
   int result;
   bool is_next_timeout;
 #if defined(__NetBSD__)
-  struct timespect ts, ts_now, rel_time;
+  struct timespec ts, ts_now, rel_time;
 #endif
   
   is_next_timeout = false;

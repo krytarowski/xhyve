@@ -83,8 +83,8 @@ sbttobt(sbintime_t _sbt)
 {
 	struct bintime _bt;
 
-	_bt.sec = _sbt >> 32;
-	_bt.frac = _sbt << 32;
+	_bt.sec = (uint64_t)_sbt >> 32;
+	_bt.frac = (uint64_t)_sbt << 32;
 	return (_bt);
 }
 
@@ -119,7 +119,7 @@ struct callout {
 #if defined(__APPLE__)
   uint64_t timeout;
 #elif defined(__NetBSD__)
-  timespec timeout;
+  struct timespec timeout;
 #endif
   void *argument;
   void (*callout)(void *);
