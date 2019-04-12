@@ -27,6 +27,7 @@
  * $FreeBSD$
  */
 
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -564,7 +565,7 @@ vm_set_register(struct vm *vm, int vcpuid, int reg, uint64_t val)
 		return (error);
 
 	/* Set 'nextrip' to match the value of %rip */
-	VCPU_CTR1(vm, vcpuid, "Setting nextrip to %#llx", val);
+	VCPU_CTR1(vm, vcpuid, "Setting nextrip to %#" PRIx64, val);
 	vcpu = &vm->vcpu[vcpuid];
 	vcpu->nextrip = val;
 	return (0);
@@ -871,7 +872,7 @@ vm_handle_inst_emul(struct vm *vm, int vcpuid, bool *retu)
 	paging = &vme->u.inst_emul.paging;
 	cpu_mode = paging->cpu_mode;
 
-	VCPU_CTR1(vm, vcpuid, "inst_emul fault accessing gpa %#llx", gpa);
+	VCPU_CTR1(vm, vcpuid, "inst_emul fault accessing gpa %#" PRIx64, gpa);
 
 	/* Fetch, decode and emulate the faulting instruction */
 	if (vie->num_valid == 0) {

@@ -22,15 +22,17 @@
   (((uint64_t)0x8000000000000000 + ((bt)->frac >> 2)) / \
     ((bt)->frac >> 1))
 
+#if !defined(__NetBSD__)
 struct bintime {
   uint64_t sec;
   uint64_t frac;
 };
+#endif
 
 typedef int64_t sbintime_t;
 
 static inline sbintime_t bttosbt(const struct bintime bt) {
-  return (sbintime_t) ((bt.sec << 32) + (bt.frac >> 32));
+  return (sbintime_t) (((uint64_t)bt.sec << 32) + (bt.frac >> 32));
 }
 
 static inline void bintime_mul(struct bintime *bt, unsigned int x) {
@@ -43,6 +45,7 @@ static inline void bintime_mul(struct bintime *bt, unsigned int x) {
   bt->frac = (p2 << 32) | (p1 & 0xffffffffull);
 }
 
+#if !defined(__NetBSD__)
 static inline void bintime_add(struct bintime *_bt, const struct bintime *_bt2)
 {
   uint64_t _u;
@@ -64,6 +67,7 @@ static inline void bintime_sub(struct bintime *_bt, const struct bintime *_bt2)
     _bt->sec--;
   _bt->sec -= _bt2->sec;
 }
+#endif
 
 #define bintime_cmp(a, b, cmp) \
   (((a)->sec == (b)->sec) ? \

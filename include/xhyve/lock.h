@@ -24,9 +24,17 @@
  * SUCH DAMAGE.
  */
 
+#if defined(__APPLE__)
 #include <Availability.h>
+#endif
 
-#if defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 101200 /* __MAC_10_12 */
+#if defined(__NetBSD__)
+	#include <pthread.h>
+	#define xhyve_lock_t pthread_spinlock_t
+	#define XHYVE_LOCK_INIT(V, LOCK) pthread_spin_init(&(V)->LOCK, PTHREAD_PROCESS_PRIVATE)
+	#define XHYVE_LOCK(V, LOCK) pthread_spin_lock(&(V)->LOCK)
+	#define XHYVE_UNLOCK(V, LOCK) pthread_spin_unlock(&(V)->LOCK)
+#elif defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 101200 /* __MAC_10_12 */
 	#include <os/lock.h>
 	#define xhyve_lock_t os_unfair_lock
 	#define XHYVE_LOCK_INIT(V, LOCK) (V)->LOCK = OS_UNFAIR_LOCK_INIT;
