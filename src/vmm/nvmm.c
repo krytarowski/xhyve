@@ -65,7 +65,14 @@ vmx_cleanup(void)
 static void *
 vmx_vm_init(struct vm *vm)
 {
-	return NULL;
+        struct vmx *vmx;
+
+        vmx = malloc(sizeof(struct vmx));
+        assert(vmx);
+        memset(vmx, 0, sizeof(struct vmx));
+        vmx->vm = vm;
+
+        return (vmx);
 }
 
 static int
@@ -78,7 +85,6 @@ vmx_vcpu_init(void *arg, int vcpuid)
 	if (ret == -1) {
 		xhyve_abort("NVMM: Failed to create a virtual processor, error=%d\n", errno);
 	}
-
 
 	return 0;
 }
