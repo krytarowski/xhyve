@@ -28,7 +28,6 @@ ENV := \
 
 CFLAGS_OPT := \
   -Os \
-  -flto \
   -fstrict-aliasing
 
 CFLAGS_WARN := \
@@ -64,7 +63,7 @@ CFLAGS := \
 ###############################################################################
 
 LDFLAGS_DBG := \
-  -Xlinker -object_path_lto
+  -Xlinker
 
 LDFLAGS := \
   -lz \
