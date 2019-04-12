@@ -34,15 +34,20 @@
 #include <errno.h>
 #include <pthread.h>
 #include <sys/time.h>
+#if defined(__APPLE__)
 #include <mach/mach.h>
 #include <mach/mach_time.h>
+#elif defined(__NetBSD__)
+#endif
 
 #include <xhyve/support/misc.h>
 #include <xhyve/vmm/vmm_callout.h>
 
 #define callout_cmp(a, b) ((a)->timeout < (b)->timeout)
 
+#if defined(__APPLE__)
 static mach_timebase_info_data_t timebase_info;
+#endif
 static pthread_t callout_thread;
 static pthread_mutex_t callout_mtx;
 static pthread_cond_t callout_cnd;
@@ -186,6 +191,7 @@ static void *callout_thread_func(UNUSED void *arg) {
 
       delta = c->timeout - mat;
       mat_to_ts(delta, &ts);
+
       ret = pthread_cond_timedwait_relative_np(&callout_cnd, &callout_mtx, &ts);
     };
 
@@ -326,7 +332,9 @@ void callout_system_init(void) {
     return;
   }
 
+#if defined(__APPLE__)
   mach_timebase_info(&timebase_info);
+#endif
   
   if (pthread_mutex_init(&callout_mtx, NULL)) {
     abort();
