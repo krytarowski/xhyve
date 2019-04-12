@@ -30,8 +30,10 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#if defined(__APPLE__)
 #include <Hypervisor/hv.h>
 #include <Hypervisor/hv_vmx.h>
+#endif
 #include <xhyve/support/misc.h>
 
 struct vmx;
