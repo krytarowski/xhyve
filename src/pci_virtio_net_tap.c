@@ -46,6 +46,7 @@
 #include <net/ethernet.h>
 #elif defined(__NetBSD__)
 #include <net/if_ether.h>
+#define octet ether_addr_octet
 #endif
 
 #if defined(__APPLE__)
