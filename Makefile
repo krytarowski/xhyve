@@ -71,6 +71,8 @@ XHYVE_SRC := \
 	src/virtio.c \
 	src/xmsr.c
 
+# XXX: src/pci_e82545.c
+
 FIRMWARE_SRC := \
 	src/firmware/kexec.c \
 	src/firmware/fbsd.c
