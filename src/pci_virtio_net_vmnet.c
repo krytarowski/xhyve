@@ -1,3 +1,4 @@
+#if defined(__APPLE__)
 /*-
  * Copyright (c) 2011 NetApp, Inc.
  * Copyright (c) 2015 xhyve developers
@@ -857,3 +858,4 @@ static struct pci_devemu pci_de_vnet_vmnet = {
 	.pe_barread =	vi_pci_read
 };
 PCI_EMUL_SET(pci_de_vnet_vmnet);
+#endif
