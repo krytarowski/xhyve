@@ -48,6 +48,7 @@ struct uuid {
 #pragma clang diagnostic pop
 
 typedef struct uuid uuid_internal_t;
+typedef uuid_internal_t uuid_t;
 
 /*
  * This implementation mostly conforms to the DCE 1.1 specification.

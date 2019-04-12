@@ -33,7 +33,9 @@
 #include <machine/limits.h>
 #include <sys/ioctl.h>
 #include <sys/uio.h>
+#if !defined(__NetBSD__)
 #include <net/ethernet.h>
+#endif
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 
@@ -47,8 +49,10 @@
 #include <unistd.h>
 #include <pthread.h>
 
+#if defined(__APPLE__)
 #include <dispatch/dispatch.h>
 #include <vmnet/vmnet.h>
+#endif
 
 #include <xhyve/xhyve.h>
 
@@ -2460,4 +2464,3 @@ static struct pci_devemu pci_de_e82545 = {
 	.pe_barread =	e82545_read
 };
 PCI_EMUL_SET(pci_de_e82545);
-
