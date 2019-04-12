@@ -29,8 +29,12 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#if defined(__APPLE__)
 #include <Hypervisor/hv.h>
 #include <Hypervisor/hv_vmx.h>
+#elif defined(__NetBSD__)
+#include <nvmm.h>
+#endif
 #include <xhyve/support/misc.h>
 #include <xhyve/vmm/vmm_mem.h>
 
@@ -44,7 +48,11 @@ void *
 vmm_mem_alloc(uint64_t gpa, size_t size, uint64_t prot)
 {
 	void *object;
+#if defined(__APPLE__)
     hv_memory_flags_t hvProt;
+#elif defined(__NetBSD__)
+	nvmm_prot_t vhProt;
+#endif
 
 	object = valloc(size);
 
@@ -52,9 +60,15 @@ vmm_mem_alloc(uint64_t gpa, size_t size, uint64_t prot)
 		xhyve_abort("vmm_mem_alloc failed\n");
 	}
 
+#if defined(__APPLE__)
     hvProt = (prot & XHYVE_PROT_READ) ? HV_MEMORY_READ : 0;
     hvProt |= (prot & XHYVE_PROT_WRITE) ? HV_MEMORY_WRITE : 0;
     hvProt |= (prot & XHYVE_PROT_EXECUTE) ? HV_MEMORY_EXEC : 0;
+#elif defined(__NetBSD__)
+	hvProt = (prot & XHYVE_PROT_READ) ? NVMM_PROT_READ : 0;
+	hvProt = (prot & XHYVE_PROT_WRITE) ? NVMM_PROT_WRITE : 0;
+	hvProt = (prot & XHYVE_PROT_EXECUTE) ? NVMM_PROT_EXEC : 0;
+#endif
 
 	if (hv_vm_map(object, gpa, size, hvProt))
 	{
