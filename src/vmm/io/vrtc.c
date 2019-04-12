@@ -32,8 +32,10 @@
 #include <pthread.h>
 #include <errno.h>
 #include <assert.h>
+#if defined(__APPLE__)
 #include <mach/mach.h>
 #include <mach/clock.h>
+#endif
 #include <xhyve/support/misc.h>
 #include <xhyve/support/rtc.h>
 #include <xhyve/vmm/vmm.h>
@@ -124,7 +126,10 @@ static void vrtc_callout_handler(void *arg);
 static void vrtc_set_reg_c(struct vrtc *vrtc, uint8_t newval);
 
 static int rtc_flag_broken_time = 1;
+
+#if defined(__APPLE__)
 static clock_serv_t mach_clock;
+#endif
 
 #define	POSIX_BASE_YEAR	1970
 #define	FEBRUARY 2
@@ -287,7 +292,9 @@ rtcset(struct rtcdev *rtc, int val)
 static void
 secs_to_rtc(time_t rtctime, struct vrtc *vrtc, int force_update)
 {
+#if defined(__APPLE__)
 	mach_timespec_t mts;
+#endif
 	struct clocktime ct;
 	struct timespec ts;
 	struct rtcdev *rtc;
@@ -307,9 +314,13 @@ secs_to_rtc(time_t rtctime, struct vrtc *vrtc, int force_update)
 	if (rtc_halted(vrtc) && !force_update)
 		return;
 
+#if defined(__APPLE__)
 	clock_get_time(mach_clock, &mts);
 	ts.tv_sec = mts.tv_sec;
 	ts.tv_nsec = mts.tv_nsec;
+#elif defined(__NetBSD__)
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+#endif
 
 	clock_ts_to_ct(&ts, &ct);
 
@@ -1087,7 +1098,9 @@ vrtc_init(struct vm *vm)
 	
 	pthread_mutex_init(&vrtc->mtx, NULL);
 
+#if defined(__APPLE__)
 	host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &mach_clock);
+#endif
 
 	callout_init(&vrtc->callout, 1);
 
@@ -1119,6 +1132,8 @@ void
 vrtc_cleanup(struct vrtc *vrtc)
 {
 	callout_drain(&vrtc->callout);
+#if defined(__APPLE__)
 	mach_port_deallocate(mach_task_self(), mach_clock);
+#endif
 	free(vrtc);
 }
