@@ -46,7 +46,11 @@
 #include <sys/queue.h>
 // #include <sys/endian.h>
 
+#if defined(__APPLE__)
 #include <CommonCrypto/CommonDigest.h>
+#elif defined(__NetBSD__)
+#include <md5.h>
+#endif
 
 #include <xhyve/support/misc.h>
 #include <xhyve/support/ata.h>
@@ -1112,6 +1116,7 @@ atapi_inquiry(struct ahci_port *p, int slot, uint8_t *cfis)
 	ahci_write_fis_d2h(p, slot, cfis, ATA_S_READY | ATA_S_DSC);
 }
 
+#if !defined(__NetBSD__)
 static __inline void
 be16enc(void *pp, uint16_t u)
 {
@@ -1149,6 +1154,7 @@ be32dec(const void *pp)
 		(((uint64_t) p[1]) << 16) | (((uint64_t) p[2]) << 8) |
 			((uint64_t) p[3]));
 }
+#endif
 
 static void
 atapi_read_capacity(struct ahci_port *p, int slot, uint8_t *cfis)
@@ -2319,7 +2325,14 @@ pci_ahci_init(struct pci_devinst *pi, char *opts, int atapi)
 	 * Create an identifier for the backing file. Use parts of the
 	 * md5 sum of the filename
 	 */
+#if defined(__NetBSD__)
+	MD5_CTX md5_ctx;
+	MD5Init(&md5_ctx);
+	MD5Update(&md5_ctx, opts, strlen(opts));
+	MD5Final(digest, &md5_ctx);
+#elif
     CC_MD5(opts, (CC_LONG)strlen(opts), digest);
+#endif
     snprintf(sc->port[0].ident, AHCI_PORT_IDENT, "BHYVE-%02X%02X-%02X%02X-%02X%02X",
 	    digest[0], digest[1], digest[2], digest[3], digest[4], digest[5]);
 
