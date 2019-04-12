@@ -78,6 +78,33 @@ static inline void bintime_sub(struct bintime *_bt, const struct bintime *_bt2)
 void binuptime(struct bintime *bt);
 void getmicrotime(struct timeval *tv);
 
+static inline struct bintime
+sbttobt(sbintime_t _sbt)
+{
+	struct bintime _bt;
+
+	_bt.sec = _sbt >> 32;
+	_bt.frac = _sbt << 32;
+	return (_bt);
+}
+
+static inline int64_t
+sbttons(sbintime_t _sbt)
+{
+
+	return ((1000000000 * _sbt) >> 32);
+}
+
+static inline struct timespec
+sbttots(sbintime_t _sbt)
+{
+	struct timespec _ts;
+
+	_ts.tv_sec = _sbt >> 32;
+	_ts.tv_nsec = sbttons((uint32_t)_sbt);
+	return (_ts);
+}
+
 static inline sbintime_t sbinuptime(void) {
   struct bintime _bt;
   
@@ -89,7 +116,11 @@ struct callout {
   pthread_cond_t wait;
   struct callout *prev;
   struct callout *next;
+#if defined(__APPLE__)
   uint64_t timeout;
+#elif defined(__NetBSD__)
+  timespec timeout;
+#endif
   void *argument;
   void (*callout)(void *);
   int flags;

@@ -161,7 +161,9 @@ static void callout_remove(struct callout *c) {
 static void *callout_thread_func(UNUSED void *arg) {
   struct callout *c;
   struct timespec ts;
+#if defined(__APPLE__)
   uint64_t delta, mat;
+#endif
   int ret;
 
   pthread_mutex_lock(&callout_mtx);
@@ -182,6 +184,7 @@ static void *callout_thread_func(UNUSED void *arg) {
     /* wait for timeout */
     ret = 0;
     while ((ret != ETIMEDOUT) && !work) {
+#if defined(__APPLE__)
       mat = mach_absolute_time();
       if (mat >= c->timeout) {
         /* XXX: it might not be worth sleeping for very short timeouts */
@@ -193,6 +196,10 @@ static void *callout_thread_func(UNUSED void *arg) {
       mat_to_ts(delta, &ts);
 
       ret = pthread_cond_timedwait_relative_np(&callout_cnd, &callout_mtx, &ts);
+#elif defined(__NetBSD__)
+      clock_gettime(CLOCK_MONOTONIC, &ts);
+      pthread_cond_timedwait(&callout_cnd, &callout_mtx, &ts);
+#endif
     };
 
     work = false;
@@ -298,7 +305,11 @@ int callout_reset_sbt(struct callout *c, sbintime_t sbt,
     //abort();
   }
 
+#if defined(__APPLE__)
   c->timeout = sbt2mat(sbt);
+#elif defined(__NetBSD__)
+  c->timeout = sbttots(sbt)
+#endif
   
   if (flags != C_ABSOLUTE) {
     c->timeout += mach_absolute_time();
