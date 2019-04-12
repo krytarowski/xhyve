@@ -51,7 +51,7 @@
 #if defined(__APPLE__)
 #include <CommonCrypto/CommonCrypto.h>
 #elif defined(__NetBSD__)
-#define <md5.h>
+#include <des.h>
 #endif
 
 #include <xhyve/support/misc.h>
@@ -755,6 +755,7 @@ rfb_wr_thr(void *arg)
 	return (NULL);
 }
 
+#if !defined(__NetBSD__)
 static void
 be32enc(void *pp, uint32_t x)
 {
@@ -764,6 +765,7 @@ be32enc(void *pp, uint32_t x)
     p[1] = (x >> 16) & 0xff;
     p[0] = (x >> 24) & 0xff;
 }
+#endif
 
 static void
 rfb_handle(struct rfb_softc *rc, int cfd)
@@ -937,7 +939,7 @@ rfb_thr(void *arg)
 
 	int cfd;
 
-#if defined(__APPLE__
+#if defined(__APPLE__)
     pthread_setname_np("rfb");
 elif defined(__NetBSD__)
     pthread_setname_np(pthread_self(), "%s", (void *)"rfb");
