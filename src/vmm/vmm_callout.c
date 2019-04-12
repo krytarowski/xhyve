@@ -163,6 +163,8 @@ static void *callout_thread_func(UNUSED void *arg) {
   struct timespec ts;
 #if defined(__APPLE__)
   uint64_t delta, mat;
+#elif defined(__NetBSD__)
+  struct timespec ts, rel_time;
 #endif
   int ret;
 
@@ -198,7 +200,11 @@ static void *callout_thread_func(UNUSED void *arg) {
       ret = pthread_cond_timedwait_relative_np(&callout_cnd, &callout_mtx, &ts);
 #elif defined(__NetBSD__)
       clock_gettime(CLOCK_MONOTONIC, &ts);
-      pthread_cond_timedwait(&callout_cnd, &callout_mtx, &ts);
+      if (timespeccmp(ts, c->timeout, >=) {
+        ret = ETIMEDOUT;
+        break;
+      }
+      pthread_cond_timedwait(&callout_cnd, &callout_mtx, &c->timeout);
 #endif
     };
 
@@ -294,6 +300,9 @@ int callout_reset_sbt(struct callout *c, sbintime_t sbt,
 {
   int result;
   bool is_next_timeout;
+#if defined(__NetBSD__)
+  struct timespect ts, ts_now, rel_time;
+#endif
   
   is_next_timeout = false;
 
@@ -307,13 +316,21 @@ int callout_reset_sbt(struct callout *c, sbintime_t sbt,
 
 #if defined(__APPLE__)
   c->timeout = sbt2mat(sbt);
-#elif defined(__NetBSD__)
-  c->timeout = sbttots(sbt)
-#endif
-  
+
   if (flags != C_ABSOLUTE) {
     c->timeout += mach_absolute_time();
   }
+#elif defined(__NetBSD__)
+  ts = sbttots(sbt);
+
+  if (flags == C_ABSOLUTE) {
+    c->timeout = ts;
+  } else {
+    clock_gettime(CLOCK_MONOTONIC, &ts_now);
+    timespecadd(&ts_now, &ts, &rel_time);
+    c->timeout = rel_time;
+  }
+#endif
 
   result = callout_stop_safe_locked(c, 0);
   
