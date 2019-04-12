@@ -4,7 +4,7 @@
 /*
  * Find Last Set bit
  */
-int
+static inline int
 fls(int mask)
 {
 	int bit;

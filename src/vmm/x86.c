@@ -32,6 +32,7 @@
 #include <xhyve/support/misc.h>
 #include <xhyve/support/atomic.h>
 #include <xhyve/support/specialreg.h>
+#include <xhyve/support/strings.h>
 #include <xhyve/vmm/vmm.h>
 #include <xhyve/vmm/vmm_host.h>
 #include <xhyve/vmm/vmm_ktr.h>
