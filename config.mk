@@ -52,6 +52,7 @@ CFLAGS := \
   -std=c11 \
   -fno-common \
   -fvisibility=hidden \
+  -D_KERNTYPES \
   $(DEFINES) \
   $(CFLAGS_OPT) \
   $(CFLAGS_WARN) \
