@@ -1,8 +1,11 @@
 #if defined(__NetBSD__)
 
+#include <errno.h>
 #include <stddef.h>
+#include <stdio.h>
 
 #include <xhyve/support/misc.h>
+#include <xhyve/support/specialreg.h>
 #include <xhyve/vmm/vmm.h>
 
 #include <nvmm.h>
