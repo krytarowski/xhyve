@@ -33,8 +33,10 @@
 #include <machine/limits.h>
 #include <sys/ioctl.h>
 #include <sys/uio.h>
-#if !defined(__NetBSD__)
+#if defined(__APPLE__)
 #include <net/ethernet.h>
+#elif defined(__NetBSD__)
+#include <net/if_ether.h>
 #endif
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -256,7 +258,9 @@ struct e82545_softc {
 	struct mevent   *esc_mevp;
 	struct mevent   *esc_mevpitr;
 	pthread_mutex_t	esc_mtx;
+#if defined(__APPLE__)
     struct vmnet_state *vms;
+#endif
 
     /* General */
 	uint32_t	esc_CTRL;	/* x0000 device ctl */
@@ -369,6 +373,7 @@ static void e82545_tx_start(struct e82545_softc *sc);
 static void e82545_tx_enable(struct e82545_softc *sc);
 static void e82545_tx_disable(struct e82545_softc *sc);
 
+#if defined(__APPLE__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
 
@@ -380,6 +385,7 @@ struct vmnet_state {
 };
 
 #pragma clang diagnostic pop
+#endif
 
 /*
  * Drop privileges according to the CERT Secure C Coding Standard section
@@ -400,6 +406,7 @@ static int drop_privileges(void) {
     return 0;
 }
 
+#if defined(__APPLE__)
 /*
  * Create an interface for the guest using Apple's vmnet framework.
  *
@@ -559,12 +566,14 @@ vmn_write(struct vmnet_state *vms, struct iovec *iov, int n) {
 
     assert(r == VMNET_SUCCESS);
 }
+#endif
 
 static void
 e82545_init_eeprom(struct e82545_softc *sc)
 {
 	uint16_t checksum, i;
 
+#if defined(__APPLE__)
         /* mac addr */
 	sc->eeprom_data[NVM_MAC_ADDR] = (uint16_t)((sc->vms->mac[0]) |
 		(sc->vms->mac[1]) << 8);
@@ -572,6 +581,7 @@ e82545_init_eeprom(struct e82545_softc *sc)
 		(sc->vms->mac[3] << 8));
 	sc->eeprom_data[NVM_MAC_ADDR+2] = (uint16_t)((sc->vms->mac[4]) |
 		(sc->vms->mac[5] << 8));
+#endif
 
 	/* pci ids */
 	sc->eeprom_data[NVM_SUB_DEV_ID] = E82545_SUBDEV_ID;
