@@ -7,21 +7,15 @@
 
 #include <nvmm.h>
 
-static struct {
+struct vmx {
 	struct nvmm_machine mach;
-} nvmm_global;
-
-static struct nvmm_machine *
-get_nvmm_mach(void)
-{
-	return &nvmm_global.mach;
-}
+	struct vm *vm;
+};
 
 static int
 vmx_init(void)
 {
 	struct nvmm_capability cap;
-	struct nvmm_x86_conf_cpuid cpuid;
 	int ret;
 
 	ret = nvmm_capability(&cap);
@@ -35,23 +29,7 @@ vmx_init(void)
 		xhyve_abort("NVMM: Wrong state size %zu", cap.state_size);
 	}
 
-	ret = nvmm_machine_create(&nvmm_global.mach);
-	if (ret == -1) {
-		xhyve_abort("NVMM: Machine creation failed, error=%d", errno);
-	}
-
-	// Configure acceleration
-	memset(&cpuid, 0, sizeof(cpuid));
-	cpuid.leaf = 0x00000001;
-	cpuid.del.edx = CPUID_MCE | CPUID_MCA | CPUID_MTRR;
-	ret = nvmm_machine_configure(mach, NVMM_X86_CONF_CPUID, &cpuid);
-	if (ret == -1) {
-		xhyve_abort("NVMM: Machine configuration failed, error=%d", errno);
-	}
-
-	// XXX: callbacks for io/mem ?
-
-	printf("NetBSD Virtual Machine Monitor accelerator is operational\n");
+	printf("NetBSD Virtual Machine Monitor accelerator is available\n");
 
 	return 0;
 }
@@ -65,12 +43,34 @@ vmx_cleanup(void)
 static void *
 vmx_vm_init(struct vm *vm)
 {
+	struct nvmm_x86_conf_cpuid cpuid;
         struct vmx *vmx;
+	int ret;
 
         vmx = malloc(sizeof(struct vmx));
-        assert(vmx);
+	if (vmx == NULL) {
+		xhyve_abort("NVMM: Cannot allocate memory for the vmx struct, error=%d", errno);
+	}
         memset(vmx, 0, sizeof(struct vmx));
         vmx->vm = vm;
+
+	ret = nvmm_machine_create(&vmx->mach);
+	if (ret == -1) {
+		xhyve_abort("NVMM: Machine creation failed, error=%d", errno);
+	}
+
+	// Configure acceleration
+	memset(&cpuid, 0, sizeof(cpuid));
+	cpuid.leaf = 0x00000001;
+	cpuid.del.edx = CPUID_MCE | CPUID_MCA | CPUID_MTRR;
+	ret = nvmm_machine_configure(&vmx->mach, NVMM_X86_CONF_CPUID, &cpuid);
+	if (ret == -1) {
+		xhyve_abort("NVMM: Machine configuration failed, error=%d", errno);
+	}
+
+	// XXX: callbacks for io/mem ?
+
+	printf("NetBSD Virtual Machine Monitor accelerator is operational\n");
 
         return (vmx);
 }
