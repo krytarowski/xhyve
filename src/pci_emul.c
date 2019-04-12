@@ -33,6 +33,7 @@
 #include <errno.h>
 #include <assert.h>
 
+#include <xhyve/support/strings.h>
 #include <xhyve/support/linker_set.h>
 #include <xhyve/vmm/vmm_api.h>
 #include <xhyve/acpi.h>
