@@ -105,15 +105,16 @@ build/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(VERBOSE) $(ENV) $(CC) $(CFLAGS) $(INC) $(DEF) -MMD -MT $@ -MF build/$*.d -o $@ -c $<
 
-$(TARGET).sym: $(OBJ)
-	@echo ld $(notdir $@)
-	$(VERBOSE) $(ENV) $(LD) $(LDFLAGS) -Xlinker $(TARGET).lto.o -o $@ $(OBJ)
-	@echo dsym $(notdir $(TARGET).dSYM)
-	$(VERBOSE) $(ENV) $(DSYM) $@ -o $(TARGET).dSYM
+$(TARGET): $(OBJ)
+	$(VERBOSE) $(ENV) $(CC) $(LDFLAGS) -o $@ $(OBJ)
+#	@echo ld $(notdir $@)
+#	$(VERBOSE) $(ENV) $(LD) $(LDFLAGS) -Xlinker $(TARGET).lto.o -o $@ $(OBJ)
+#	@echo dsym $(notdir $(TARGET).dSYM)
+#	$(VERBOSE) $(ENV) $(DSYM) $@ -o $(TARGET).dSYM
 
-$(TARGET): $(TARGET).sym
-	@echo strip $(notdir $@)
-	$(VERBOSE) $(ENV) $(STRIP) $(TARGET).sym -o $@
+#$(TARGET): $(TARGET).sym
+##;2A	@echo strip $(notdir $@)
+#	$(VERBOSE) $(ENV) $(STRIP) $(TARGET).sym -o $@
 
 clean:
 	@rm -rf build
