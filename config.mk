@@ -67,5 +67,7 @@ LDFLAGS := \
   -lz \
   -lpthread \
   -lprop \
-  /usr/src/lib/libnvmm/libnvmm.so \
+  -lnvmm \
+  -L/usr/src/lib/libnvmm/ \
+  -Wl,-R/usr/src/lib/libnvmm/
   $(LDFLAGS_DBG)
