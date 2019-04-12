@@ -40,6 +40,10 @@
  */
 #define	_BITSET_BITS		(sizeof(long) * NBBY)
 
+#ifndef howmany
+#define howmany(x, y) (((x)+((y)-1))/(y))
+#endif
+
 #define	__bitset_words(_s)	(howmany(_s, _BITSET_BITS))
 
 #define	__bitset_mask(_s, n)						\

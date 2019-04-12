@@ -9,8 +9,12 @@
 #define XHYVE_PAGE_SIZE 0x1000
 #define XHYVE_PAGE_MASK (XHYVE_PAGE_SIZE - 1)
 #define XHYVE_PAGE_SHIFT 12
+#ifndef __aligned
 #define __aligned(x) __attribute__ ((aligned ((x))))
+#endif
+#ifndef __packed
 #define __packed __attribute__ ((packed))
+#endif
 #define nitems(x) (sizeof((x)) / sizeof((x)[0]))
 #define powerof2(x)	((((x)-1)&(x))==0)
 #define roundup2(x, y) (((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
