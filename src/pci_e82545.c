@@ -1613,7 +1613,11 @@ e82545_tx_thread(void *param)
 
     snprintf(nstr, sizeof(nstr), "e82545-%d:%d tx", sc->esc_pi->pi_slot,
              sc->esc_pi->pi_func);
+#if defined(__APPLE__)
     pthread_setname_np(nstr);
+#elif defined(__NetBSD__)
+    pthread_setname_np(pthread_self(), "%s", (void *)nstr);
+#endif
 
 	pthread_mutex_lock(&sc->esc_mtx);
 	for (;;) {

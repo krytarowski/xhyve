@@ -48,7 +48,11 @@
 
 #include <zlib.h>
 
+#if defined(__APPLE__)
 #include <CommonCrypto/CommonCrypto.h>
+#elif defined(__NetBSD__)
+#define <md5.h>
+#endif
 
 #include <xhyve/support/misc.h>
 
@@ -712,7 +716,11 @@ rfb_wr_thr(void *arg)
 	int cfd;
 	int err;
 
+#if defined(__APPLE__)
     pthread_setname_np("rfbout");
+#elif defined(__NetBSD__)
+    pthread_setname_np(pthread_self(), "%s", (void *)"rfbout");
+#endif
 
 	rc = arg;
 	cfd = rc->cfd;
@@ -929,7 +937,11 @@ rfb_thr(void *arg)
 
 	int cfd;
 
+#if defined(__APPLE__
     pthread_setname_np("rfb");
+elif defined(__NetBSD__)
+    pthread_setname_np(pthread_self(), "%s", (void *)"rfb");
+#endif
 
 	rc = arg;
 
