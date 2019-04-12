@@ -778,9 +778,12 @@ rfb_handle(struct rfb_softc *rc, int cfd)
 	unsigned char keystr[PASSWD_LENGTH];
 	unsigned char crypt_expected[AUTH_LENGTH];
 
-    size_t dataOutSize;
     int i;
+
+#if defined(__APPLE__)
+    size_t dataOutSize;
     CCCryptorStatus cryptoResult;
+#endif
 
 	pthread_t tid = NULL;
 	uint32_t sres = 0;
@@ -844,6 +847,7 @@ rfb_handle(struct rfb_softc *rc, int cfd)
 
 		memcpy(crypt_expected, challenge, AUTH_LENGTH);
 
+#if defined(__APPLE__)
         cryptoResult = CCCrypt(kCCEncrypt, kCCAlgorithmDES, kCCOptionECBMode,
                                keystr, PASSWD_LENGTH,
                                NULL,
@@ -860,6 +864,7 @@ rfb_handle(struct rfb_softc *rc, int cfd)
         } else {
 			sres = 0;
         }
+#endif
         break;
 	}
 
