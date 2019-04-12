@@ -78,10 +78,12 @@ vmx_vm_init(struct vm *vm)
 static int
 vmx_vcpu_init(void *arg, int vcpuid)
 {
-	struct nvmm_machine mach = get_nvmm_mach();
+	struct vmx *vmx;
 	int ret;
 
-	ret = nvmm_vcpu_create(&mach, vcpuid);
+	vmx = (struct vmx *)arg;
+
+	ret = nvmm_vcpu_create(&vmx->mach, vcpuid);
 	if (ret == -1) {
 		xhyve_abort("NVMM: Failed to create a virtual processor, error=%d\n", errno);
 	}
