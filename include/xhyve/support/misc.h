@@ -17,7 +17,9 @@
 #endif
 #define nitems(x) (sizeof((x)) / sizeof((x)[0]))
 #define powerof2(x)	((((x)-1)&(x))==0)
+#ifndef roundup2
 #define roundup2(x, y) (((x)+((y)-1))&(~((y)-1))) /* if y is powers of two */
+#endif
 #define nitems(x) (sizeof((x)) / sizeof((x)[0]))
 #define min(x, y) (((x) < (y)) ? (x) : (y))
 
