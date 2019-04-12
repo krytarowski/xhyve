@@ -100,10 +100,10 @@ lapic_intr_msi(struct vm *vm, uint64_t addr, uint64_t msg)
 	uint32_t dest;
 	bool phys;
 
-	VM_CTR2(vm, "lapic MSI addr: %#llx msg: %#llx", addr, msg);
+	VM_CTR2(vm, "lapic MSI addr: %#" PRIx64 " msg: %#" PRIx64, addr, msg);
 
 	if ((addr & MSI_X86_ADDR_MASK) != MSI_X86_ADDR_BASE) {
-		VM_CTR1(vm, "lapic MSI invalid addr %#llx", addr);
+		VM_CTR1(vm, "lapic MSI invalid addr %#" PRIx64, addr);
 		return (-1);
 	}
 
