@@ -88,17 +88,25 @@ static inline void mat_to_ts(uint64_t mat, struct timespec *ts) {
   ts->tv_sec = (ns / 1000000000);
   ts->tv_nsec = (ns % 1000000000);
 }
+#endif
 
 void binuptime(struct bintime *bt) {
+#if defined(__APPLE__)
   uint64_t ns;
   
   ns = abs_to_nanos(mach_absolute_time());
 
   bt->sec = (ns / 1000000000);
   bt->frac = (((ns % 1000000000) * (((uint64_t) 1 << 63) / 500000000)));
+#elif defined(__NetBSD__)
+  struct timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  timespec2bintime(&ts, bt);
+#endif
 }
 
 void getmicrotime(struct timeval *tv) {
+#if defined(__APPLE__)
   uint64_t ns, sns;
 
   ns = abs_to_nanos(mach_absolute_time());
@@ -106,8 +114,12 @@ void getmicrotime(struct timeval *tv) {
   sns = (ns / 1000000000);
   tv->tv_sec = (long) sns;
   tv->tv_usec = (int) ((ns - sns) / 1000);
-}
+#elif defined(__NetBSD__)
+  struct timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  TIMESPEC_TO_TIMEVAL(tv, &ts);
 #endif
+}
 
 static void callout_insert(struct callout *c) {
   struct callout *node = callout_queue;
