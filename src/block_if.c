@@ -34,7 +34,12 @@
 #include <sys/ioctl.h>
 #include <sys/disk.h>
 
+#if defined(__NetBSD__)
+#include <prop/proplib.h>
+#endif
+
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,6 +49,7 @@
 #include <unistd.h>
 
 #include <xhyve/support/atomic.h>
+#include <xhyve/support/misc.h>
 #include <xhyve/xhyve.h>
 #include <xhyve/mevent.h>
 #include <xhyve/block_if.h>
@@ -121,6 +127,7 @@ static struct blockif_sig_elem *blockif_bse_head;
 
 #pragma clang diagnostic pop
 
+#if defined(__APPLE__)
 static ssize_t
 preadv(int fd, const struct iovec *iov, int iovcnt, off_t offset)
 {
@@ -140,6 +147,7 @@ pwritev(int fd, const struct iovec *iov, int iovcnt, off_t offset)
 	assert(res == offset);
 	return writev(fd, iov, iovcnt);
 }
+#endif
 
 static int
 blockif_enqueue(struct blockif_ctxt *bc, struct blockif_req *breq,
@@ -315,10 +323,13 @@ blockif_proc(struct blockif_ctxt *bc, struct blockif_elem *be, uint8_t *buf)
 		}
 		break;
 	case BOP_FLUSH:
+#if !defined(__NetBSD__)
 		if (bc->bc_ischr) {
 			if (ioctl(bc->bc_fd, DKIOCSYNCHRONIZECACHE))
 				err = errno;
-		} else if (fsync(bc->bc_fd))
+		} else
+#endif
+		if (fsync(bc->bc_fd))
 			err = errno;
 		break;
 	case BOP_DELETE:
@@ -513,6 +524,35 @@ blockif_open(const char *optstr, UNUSED const char *ident)
 		// if (ioctl(fd, DIOCGPROVIDERNAME, name) == 0)
 		// 	geom = 1;
 	} else if (S_ISBLK(sbuf.st_mode)) {
+#if defined(__NetBSD__)
+		prop_dictionary_t disk_dict, geom_dict;
+		uint64_t secperunit;
+		uint32_t secsize;
+
+		if (prop_dictionary_recv_ioctl(fd, DIOCGDISKINFO, &disk_dict) != 0) {
+			perror("DIOCGDISKINFO");
+			goto err;
+		}
+
+		geom_dict = prop_dictionary_get(disk_dict, "geometry");
+		if (geom_dict == NULL) {
+			perror("prop_dictionary_get(gemometry)");
+			goto err;
+		}
+
+		if (!prop_dictionary_get_uint64(geom_dict, "sectors-per-unit", &secperunit)) {
+			perror("prop_dictionary_get_uint64(sectors-per-unit)");
+			goto err;
+		}
+
+		if (!prop_dictionary_get_uint32(geom_dict, "sector-size", &secsize)) {
+			perror("prop_dictionary_get_uint32(sector-size)");
+			goto err;
+		}
+
+		size = (off_t)secperunit * (off_t)secsize;
+		sectsz = (int)secsize;
+#elif
 		uint64_t num_blocks;
 		uint32_t block_size;
 		if (ioctl(fd, DKIOCGETBLOCKSIZE, (void*)&block_size) < 0) {
@@ -525,6 +565,7 @@ blockif_open(const char *optstr, UNUSED const char *ident)
 		}
 		size = (off_t) (num_blocks * block_size);
 		sectsz = (int) block_size;
+#endif
 	} else {
 		psectsz = sbuf.st_blksize;
 	}

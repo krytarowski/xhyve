@@ -108,3 +108,11 @@ static inline void write_uint64_unaligned(void *pointer, uint64_t data) {
     uint64_t *castPointer = (uint64_t *)pointer;
     *castPointer = data;
 }
+
+#if defined(__NetBSD__) && !defined(OFF_MAX)
+#ifdef	__LP64__
+#define	OFF_MAX LONG_MAX
+#elif
+#define OFF_MAX LLONG_MAX
+#endif
+#endif
