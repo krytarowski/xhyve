@@ -33,7 +33,11 @@
 #include <unistd.h>
 #include <sys/param.h>
 
+#if defined(__APPLE__)
 #include <CommonCrypto/CommonDigest.h>
+#elif defined(__NetBSD__)
+#include <md5.h>
+#endif
 
 #include <xhyve/support/misc.h>
 #include <xhyve/support/uuid.h>
@@ -598,7 +602,11 @@ smbios_type1_initializer(struct smbios_structure *template_entry,
 
 		uuid_enc_le(&type1->uuid, &uuid);
 	} else {
+#if defined(__APPLE__)
 		CC_MD5_CTX	mdctx;
+#elif defined(__NetBSD__)
+		MD5_CTX		mdctx;
+#endif
 		u_char		digest[16];
 		char		hostname[MAXHOSTNAMELEN];
 
@@ -610,10 +618,17 @@ smbios_type1_initializer(struct smbios_structure *template_entry,
 		if (gethostname(hostname, sizeof(hostname)))
 			return (-1);
 
+#if defined(__APPLE__)
 		CC_MD5_Init(&mdctx);
 		CC_MD5_Update(&mdctx, vmname, ((unsigned) strlen(vmname)));
 		CC_MD5_Update(&mdctx, hostname, ((unsigned) sizeof(hostname)));
 		CC_MD5_Final(digest, &mdctx);
+#elif defined(__NetBSD__)
+		MD5Init(&mdctx);
+		MD5Update(&mdctx, vmname, ((unsigned) strlen(vmname)));
+		MD5Update(&mdctx, hostname, ((unsigned) strlen(hostname)));
+		MD5Final(digest, &mdctx);
+#endif
 
 		/*
 		 * Set the variant and version number.
