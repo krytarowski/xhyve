@@ -103,7 +103,11 @@ struct vmm_ops {
 	vmi_interrupt vcpu_interrupt;
 };
 
+#if defined(__APPLE__)
 extern struct vmm_ops vmm_ops_intel;
+#elif defined(__NetBSD__)
+extern struct vmm_ops vmm_ops_nvmm;
+#endif
 
 int vmm_init(void);
 int vmm_cleanup(void);

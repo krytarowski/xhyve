@@ -1,3 +1,4 @@
+#if defined(__APPLE__)
 /*-
  * Copyright (c) 2011 NetApp, Inc.
  * Copyright (c) 2015 xhyve developers
@@ -351,3 +352,4 @@ vmx_wrmsr(struct vmx *vmx, int vcpuid, u_int num, uint64_t val)
 
 	return (error);
 }
+#endif

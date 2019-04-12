@@ -1,3 +1,4 @@
+#if defined(__APPLE__)
 /*-
  * Copyright (c) 2011 NetApp, Inc.
  * Copyright (c) 2015 xhyve developers
@@ -2763,3 +2764,4 @@ struct vmm_ops vmm_ops_intel = {
 	vmx_vlapic_cleanup,
 	vmx_vcpu_interrupt
 };
+#endif

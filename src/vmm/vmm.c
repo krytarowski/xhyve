@@ -264,8 +264,12 @@ vmm_init(void)
 	error = vmm_mem_init();
 	if (error)
 		return (error);
-	
+
+#if defined(__APPLE__)
 	ops = &vmm_ops_intel;
+#elif defined(__NetBSD__)
+	ops = &vmm_ops_nvmm;
+#endif
 
 	error = VMM_INIT();
 

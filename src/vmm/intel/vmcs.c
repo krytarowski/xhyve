@@ -1,3 +1,4 @@
+#if defined(__APPLE__)
 /*-
  * Copyright (c) 2011 NetApp, Inc.
  * Copyright (c) 2015 xhyve developers
@@ -243,3 +244,4 @@ vmcs_getdesc(int vcpuid, int seg, struct seg_desc *desc)
 
 	return (0);
 }
+#endif
