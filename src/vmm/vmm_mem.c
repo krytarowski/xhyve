@@ -27,6 +27,8 @@
  * $FreeBSD$
  */
 
+#include <sys/types.h>
+#include <sys/mman.h>
 #include <stdint.h>
 #include <stdlib.h>
 #if defined(__APPLE__)
@@ -51,7 +53,7 @@ vmm_mem_alloc(uint64_t gpa, size_t size, uint64_t prot)
 #if defined(__APPLE__)
     hv_memory_flags_t hvProt;
 #elif defined(__NetBSD__)
-	nvmm_prot_t vhProt;
+	int hvProt;
 #endif
 
 	object = valloc(size);
@@ -65,12 +67,16 @@ vmm_mem_alloc(uint64_t gpa, size_t size, uint64_t prot)
     hvProt |= (prot & XHYVE_PROT_WRITE) ? HV_MEMORY_WRITE : 0;
     hvProt |= (prot & XHYVE_PROT_EXECUTE) ? HV_MEMORY_EXEC : 0;
 #elif defined(__NetBSD__)
-	hvProt = (prot & XHYVE_PROT_READ) ? NVMM_PROT_READ : 0;
-	hvProt = (prot & XHYVE_PROT_WRITE) ? NVMM_PROT_WRITE : 0;
-	hvProt = (prot & XHYVE_PROT_EXECUTE) ? NVMM_PROT_EXEC : 0;
+	hvProt = (prot & XHYVE_PROT_READ) ? PROT_READ : 0;
+	hvProt = (prot & XHYVE_PROT_WRITE) ? PROT_WRITE : 0;
+	hvProt = (prot & XHYVE_PROT_EXECUTE) ? PROT_EXEC : 0;
 #endif
 
+#if defined(__APPLE__)
 	if (hv_vm_map(object, gpa, size, hvProt))
+#elif defined(__NetBSD__)
+	if (nvmm_gpa_map(NULL /* XXX */, (uintptr_t)object, gpa, size, hvProt))
+#endif
 	{
 		xhyve_abort("hv_vm_map failed\n");
 	}
@@ -81,6 +87,11 @@ vmm_mem_alloc(uint64_t gpa, size_t size, uint64_t prot)
 void
 vmm_mem_free(uint64_t gpa, size_t size, void *object)
 {
+#if defined(__APPLE__)
 	hv_vm_unmap(gpa, size);
+#elif defined(__NetBSD__)
+	if (nvmm_gpa_unmap(NULL /* XXX */, object, gpa, size))
+#endif
+
 	free(object);
 }

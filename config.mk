@@ -33,10 +33,8 @@ CFLAGS_OPT := \
 
 CFLAGS_WARN := \
   -Weverything \
-  -Werror \
   -Wno-unknown-warning-option \
-  -Wno-reserved-id-macro \
-  -pedantic
+  -Wno-reserved-id-macro
 
 CFLAGS_DIAG := \
   -fmessage-length=152 \
@@ -53,6 +51,8 @@ CFLAGS := \
   -fno-common \
   -fvisibility=hidden \
   -D_KERNTYPES \
+  -I/usr/src/lib/libnvmm \
+  -I/usr/src/sys/ \
   $(DEFINES) \
   $(CFLAGS_OPT) \
   $(CFLAGS_WARN) \
