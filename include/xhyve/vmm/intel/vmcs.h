@@ -29,8 +29,10 @@
 #pragma once
 
 #include <stdint.h>
+#if defined(__APPLE__)
 #include <Hypervisor/hv.h>
 #include <Hypervisor/hv_vmx.h>
+#endif
 #include <xhyve/vmm/vmm.h>
 
 int	vmcs_getreg(int vcpuid, int ident, uint64_t *rv);

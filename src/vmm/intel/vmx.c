@@ -33,8 +33,10 @@
 #include <stdio.h>
 #include <errno.h>
 #include <assert.h>
+#if defined(__APPLE__)
 #include <Hypervisor/hv.h>
 #include <Hypervisor/hv_vmx.h>
+#endif
 #include <xhyve/support/misc.h>
 #include <xhyve/support/atomic.h>
 #include <xhyve/support/psl.h>
