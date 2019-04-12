@@ -27,6 +27,7 @@
  * $FreeBSD$
  */
 
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
