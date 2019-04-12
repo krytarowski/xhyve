@@ -893,7 +893,7 @@ vm_handle_inst_emul(struct vm *vm, int vcpuid, bool *retu)
 		return (error);
 
 	if (vmm_decode_instruction(vm, vcpuid, gla, cpu_mode, cs_d, vie) != 0) {
-		VCPU_CTR1(vm, vcpuid, "Error decoding instruction at %#llx",
+		VCPU_CTR1(vm, vcpuid, "Error decoding instruction at %#" PRIx64,
 		    vme->rip + cs_base);
 		*retu = true;	    /* dump instruction bytes in userspace */
 		return (0);
@@ -1153,7 +1153,7 @@ vm_restart_instruction(void *arg, int vcpuid)
 		 * instruction to be restarted.
 		 */
 		vcpu->exitinfo.inst_length = 0;
-		VCPU_CTR1(vm, vcpuid, "restarting instruction at %#llx by "
+		VCPU_CTR1(vm, vcpuid, "restarting instruction at %#" PRIx64 " by "
 		    "setting inst_length to zero", vcpu->exitinfo.rip);
 	} else if (state == VCPU_FROZEN) {
 		/*
@@ -1165,7 +1165,7 @@ vm_restart_instruction(void *arg, int vcpuid)
 		error = vm_get_register(vm, vcpuid, VM_REG_GUEST_RIP, &rip);
 		KASSERT(!error, ("%s: error %d getting rip", __func__, error));
 		VCPU_CTR2(vm, vcpuid, "restarting instruction by updating "
-		    "nextrip from %#llx to %#llx", vcpu->nextrip, rip);
+		    "nextrip from %#" PRIx64 " to %#" PRIx64, vcpu->nextrip, rip);
 		vcpu->nextrip = rip;
 	} else {
 		xhyve_abort("%s: invalid state %d\n", __func__, state);
@@ -1196,7 +1196,7 @@ vm_exit_intinfo(struct vm *vm, int vcpuid, uint64_t info)
 	} else {
 		info = 0;
 	}
-	VCPU_CTR2(vm, vcpuid, "%s: info1(%#llx)", __func__, info);
+	VCPU_CTR2(vm, vcpuid, "%s: info1(%#" PRIx64 ")", __func__, info);
 	vcpu->exitintinfo = info;
 	return (0);
 }
@@ -1214,7 +1214,7 @@ exception_class(uint64_t info)
 {
 	int type, vector;
 
-	KASSERT(info & VM_INTINFO_VALID, ("intinfo must be valid: %#llx", info));
+	KASSERT(info & VM_INTINFO_VALID, ("intinfo must be valid: %#" PRIx64, info));
 	type = info & VM_INTINFO_TYPE;
 	vector = info & 0xff;
 
@@ -1262,8 +1262,8 @@ nested_fault(struct vm *vm, int vcpuid, uint64_t info1, uint64_t info2,
 	enum exc_class exc1, exc2;
 	int type1, vector1;
 
-	KASSERT(info1 & VM_INTINFO_VALID, ("info1 %#llx is not valid", info1));
-	KASSERT(info2 & VM_INTINFO_VALID, ("info2 %#llx is not valid", info2));
+	KASSERT(info1 & VM_INTINFO_VALID, ("info1 %#" PRIx64 " is not valid", info1));
+	KASSERT(info2 & VM_INTINFO_VALID, ("info2 %#" PRIx64 " is not valid", info2));
 
 	/*
 	 * If an exception occurs while attempting to call the double-fault
@@ -1272,7 +1272,7 @@ nested_fault(struct vm *vm, int vcpuid, uint64_t info1, uint64_t info2,
 	type1 = info1 & VM_INTINFO_TYPE;
 	vector1 = info1 & 0xff;
 	if (type1 == VM_INTINFO_HWEXCEPTION && vector1 == IDT_DF) {
-		VCPU_CTR2(vm, vcpuid, "triple fault: info1(%#llx), info2(%#llx)",
+		VCPU_CTR2(vm, vcpuid, "triple fault: info1(%#" PRIx64 "), info2(%#" PRIx64 ")",
 		    info1, info2);
 		vm_suspend(vm, VM_SUSPEND_TRIPLEFAULT);
 		*retinfo = 0;
@@ -1331,7 +1331,7 @@ vm_entry_intinfo(struct vm *vm, int vcpuid, uint64_t *retinfo)
 	if (vcpu->exception_pending) {
 		info2 = vcpu_exception_intinfo(vcpu);
 		vcpu->exception_pending = 0;
-		VCPU_CTR2(vm, vcpuid, "Exception %d delivered: %#llx",
+		VCPU_CTR2(vm, vcpuid, "Exception %d delivered: %#" PRIx64,
 		    vcpu->exc_vector, info2);
 	}
 
@@ -1348,8 +1348,8 @@ vm_entry_intinfo(struct vm *vm, int vcpuid, uint64_t *retinfo)
 	}
 
 	if (valid) {
-		VCPU_CTR4(vm, vcpuid, "%s: info1(%#llx), info2(%#llx), "
-		    "retinfo(%#llx)", __func__, info1, info2, *retinfo);
+		VCPU_CTR4(vm, vcpuid, "%s: info1(%#" PRIx64 "), info2(%#" PRIx64 "), "
+		    "retinfo(%#" PRIx64 ")", __func__, info1, info2, *retinfo);
 	}
 
 	return (valid);
@@ -1441,7 +1441,7 @@ vm_inject_pf(void *vmarg, int vcpuid, int error_code, uint64_t cr2)
 	int error;
 
 	vm = vmarg;
-	VCPU_CTR2(vm, vcpuid, "Injecting page fault: error_code %#x, cr2 %#llx",
+	VCPU_CTR2(vm, vcpuid, "Injecting page fault: error_code %#x, cr2 %#" PRIx64,
 	    error_code, cr2);
 
 	error = vm_set_register(vm, vcpuid, VM_REG_GUEST_CR2, cr2);
