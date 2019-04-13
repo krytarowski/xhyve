@@ -65,7 +65,6 @@ vmx_cleanup(void)
 static void *
 vmx_vm_init(struct vm *vm)
 {
-	struct nvmm_x86_conf_cpuid cpuid;
 	struct vmx *vmx;
 	int ret;
 
@@ -203,7 +202,7 @@ vmx_vcpu_interrupt(int vcpu)
 
 }
 
-struct vmm_ops vmm_ops_nvmm = {
+struct vmm_ops vmm_ops_hax = {
 	vmx_init,
 	vmx_cleanup,
 	vmx_vm_init,
