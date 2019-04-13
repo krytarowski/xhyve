@@ -84,9 +84,9 @@ static const uint64_t nvmm_x86_regs_gprs[] = {
         NVMM_X64_NGPR,    /* VM_REG_GUEST_CR3 */
         NVMM_X64_NGPR,    /* VM_REG_GUEST_CR4 */
         NVMM_X64_NGPR,    /* VM_REG_GUEST_DR7 */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_RSP */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_RIP */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_RFLAGS */
+        NVMM_X64_GPR_RSP, /* VM_REG_GUEST_RSP */
+        NVMM_X64_GPR_RIP, /* VM_REG_GUEST_RIP */
+        NVMM_X64_GPR_RFLAGS,/* VM_REG_GUEST_RFLAGS */
         NVMM_X64_NGPR,    /* VM_REG_GUEST_ES */
         NVMM_X64_NGPR,    /* VM_REG_GUEST_CS */
         NVMM_X64_NGPR,    /* VM_REG_GUEST_SS */
@@ -108,7 +108,7 @@ static const uint64_t nvmm_x86_regs_gprs[] = {
 
 };
 
-static const uint64_t nvmm_x86_regs_ctrl[] = {
+static const uint64_t nvmm_x86_regs_crs[] = {
         NVMM_X64_NCR,     /* VM_REG_GUEST_RAX */
         NVMM_X64_NCR,     /* VM_REG_GUEST_RBX */
         NVMM_X64_NCR,     /* VM_REG_GUEST_RCX */
@@ -152,7 +152,7 @@ static const uint64_t nvmm_x86_regs_ctrl[] = {
 
 };
 
-static const uint64_t nvmm_x86_regs_dbgs[] = {
+static const uint64_t nvmm_x86_regs_dbs[] = {
         NVMM_X64_NDR,     /* VM_REG_GUEST_RAX */
         NVMM_X64_NDR,     /* VM_REG_GUEST_RBX */
         NVMM_X64_NDR,     /* VM_REG_GUEST_RCX */
@@ -372,6 +372,42 @@ vmx_getreg_gpr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
 }
 
 static int
+vmx_getreg_cr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
+{
+	struct nvmm_x64_state state;
+
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
+
+	*retval = state.gprs[nvmm_regs_gpr[reg]];
+
+	return 0;
+}
+
+static int
+vmx_getreg_dr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
+{
+	struct nvmm_x64_state state;
+
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
+
+	*retval = state.gprs[nvmm_regs_gpr[reg]];
+
+	return 0;
+}
+
+static int
+vmx_getreg_msr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
+{
+	struct nvmm_x64_state state;
+
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
+
+	*retval = state.gprs[nvmm_regs_gpr[reg]];
+
+	return 0;
+}
+
+static int
 vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 {
 	struct vmx *vmx;
@@ -396,13 +432,17 @@ vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 	case VM_REG_GUEST_R15:
 	case VM_REG_GUEST_RIP:
 	case VM_REG_GUEST_RFLAGS:
-		return vmx_getreg_gpr(arg, vcpu, reg, retval);
+	case VM_REG_GUEST_RSP:
+		return vmx_getreg_gpr(wmx, vcpu, reg, retval);
 
 	case VM_REG_GUEST_CR0:
 	case VM_REG_GUEST_CR3:
 	case VM_REG_GUEST_CR4:
+	case VM_REG_GUEST_CR2:
+		return vmx_getreg_cr(wmx, vcpu, reg, retval);
+
 	case VM_REG_GUEST_DR7:
-	case VM_REG_GUEST_RSP:
+		return vmx_getreg_dr(wmx, vcpu, reg, retval);
 
 	case VM_REG_GUEST_ES:
 	case VM_REG_GUEST_CS:
@@ -411,17 +451,20 @@ vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 	case VM_REG_GUEST_FS:
 	case VM_REG_GUEST_GS:
 	case VM_REG_GUEST_LDTR:
-	case VM_REG_GUEST_TR:    
-	case VM_REG_GUEST_IDTR:  
-	case VM_REG_GUEST_GDTR:  
-	case VM_REG_GUEST_EFER:  
-	case VM_REG_GUEST_CR2:
+	case VM_REG_GUEST_TR:
+	case VM_REG_GUEST_IDTR:
+	case VM_REG_GUEST_GDTR:
+		return vmx_getreg_seg(wmx, vcpu, reg, retval);
+
+	case VM_REG_GUEST_EFER:
+		return vmx_getreg_msr(wmx, vcpu, reg, retval);
+
 	case VM_REG_GUEST_PDPTE0:
 	case VM_REG_GUEST_PDPTE1:
 	case VM_REG_GUEST_PDPTE2:
 	case VM_REG_GUEST_PDPTE3:
 	case VM_REG_GUEST_INTR_SHADOW:
-	case VM_REG_LAST
+	case VM_REG_LAST:
 	}
 
 
