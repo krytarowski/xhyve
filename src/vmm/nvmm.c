@@ -791,12 +791,32 @@ vmx_setcap(void *arg, int vcpu, int type, int val)
 static struct vlapic *
 vmx_vlapic_init(void *arg, int vcpuid)
 {
-	return NULL;
+        struct vmx *vmx;
+        struct vlapic *vlapic;
+        struct vlapic_vtx *vlapic_vtx;
+
+        vmx = arg;
+
+        vlapic = malloc(sizeof(struct vlapic_vtx));
+        assert(vlapic);
+        bzero(vlapic, sizeof(struct vlapic));
+        vlapic->vm = vmx->vm;
+        vlapic->vcpuid = vcpuid;
+        vlapic->apic_page = (struct LAPIC *)&vmx->apic_page[vcpuid];
+
+        vlapic_vtx = (struct vlapic_vtx *)vlapic;
+        vlapic_vtx->vmx = vmx;
+
+        vlapic_init(vlapic);
+
+        return (vlapic);
 }
 
 static void
 vmx_vlapic_cleanup(UNUSED void *arg, struct vlapic *vlapic)
 {
+        vlapic_cleanup(vlapic);
+        free(vlapic);
 }
 
 static void
