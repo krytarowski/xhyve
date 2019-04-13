@@ -439,13 +439,13 @@ vmx_vcpu_cleanup(void *arg, int vcpuid)
 }
 
 static int
-vmx_getreg_seg(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
+vmx_getreg_seg(struct vmx *vmx, int vcpu, int reg, struct seg_desc *desc)
 {
 	struct nvmm_x64_state state;
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
-	*retval = state.segs[nvmm_x86_regs_segs[reg]].selector; // XXX
+	memcpy(desc, &state.segs[nvmm_x86_regs_segs[reg]], sizeof(*desc));
 
 	return 0;
 }
@@ -571,13 +571,13 @@ vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 
 
 static int
-vmx_setreg_seg(struct vmx *vmx, int vcpu, int reg, uint64_t val)
+vmx_setreg_seg(struct vmx *vmx, int vcpu, int reg, struct seg_desc *desc)
 {
 	struct nvmm_x64_state state;
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
-	state.segs[nvmm_x86_regs_segs[reg]].selector = val; // XXX
+	memcpy(&state.segs[nvmm_x86_regs_segs[reg]], desc, sizeof(*desc));
 
 	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
@@ -687,7 +687,7 @@ vmx_setreg(void *arg, int vcpu, int reg, uint64_t val)
 	case VM_REG_GUEST_TR:
 	case VM_REG_GUEST_IDTR:
 	case VM_REG_GUEST_GDTR:
-		return vmx_setreg_seg(vmx, vcpu, reg, val);
+		// XXX
 
 	case VM_REG_GUEST_EFER:
 		return vmx_setreg_msr(vmx, vcpu, reg, val);
@@ -711,14 +711,58 @@ vmx_setreg(void *arg, int vcpu, int reg, uint64_t val)
 }
 
 static int
-vmx_getdesc(UNUSED void *arg, int vcpu, int reg, struct seg_desc *desc)
+vmx_getdesc(void *arg, int vcpu, int reg, struct seg_desc *desc)
 {
+	struct vmx *vmx;
+
+	vmx = (struct vmx *)arg;
+
+	switch (reg) {
+	case VM_REG_GUEST_ES:
+	case VM_REG_GUEST_CS:
+	case VM_REG_GUEST_SS:
+	case VM_REG_GUEST_DS:
+	case VM_REG_GUEST_FS:
+	case VM_REG_GUEST_GS:
+	case VM_REG_GUEST_LDTR:
+	case VM_REG_GUEST_TR:
+	case VM_REG_GUEST_IDTR:
+	case VM_REG_GUEST_GDTR:
+		return vmx_getreg_seg(vmx, vcpu, reg, desc);
+
+	default:
+		// XXX
+		break;
+	};
+
+
 	return 0;
 }
 
 static int
-vmx_setdesc(UNUSED void *arg, int vcpu, int reg, struct seg_desc *desc)
+vmx_setdesc(void *arg, int vcpu, int reg, struct seg_desc *desc)
 {
+	struct vmx *vmx;
+
+	vmx = (struct vmx *)arg;
+
+	switch (reg) {
+	case VM_REG_GUEST_ES:
+	case VM_REG_GUEST_CS:
+	case VM_REG_GUEST_SS:
+	case VM_REG_GUEST_DS:
+	case VM_REG_GUEST_FS:
+	case VM_REG_GUEST_GS:
+	case VM_REG_GUEST_LDTR:
+	case VM_REG_GUEST_TR:
+	case VM_REG_GUEST_IDTR:
+	case VM_REG_GUEST_GDTR:
+		return vmx_setreg_seg(vmx, vcpu, reg, desc);
+	default:
+		// XXX
+		break;
+	};
+
 	return 0;
 }
 
