@@ -92,7 +92,9 @@ get_module_info(const char *name, modstat_t *msdest)
 	found = false;
 	count = *(int *)iov.iov_base;
 	ms = (modstat_t *)((char *)iov.iov_base + sizeof(int));
+	int aaa = 0;
 	while (count > 0) {
+		printf("iter=%d ms->ms_name=%s\n", aaa++, ms->ms_name);
 		if (strcmp(ms->ms_name, name) == 0) {
 			if (msdest != NULL)
 				*msdest = *ms;

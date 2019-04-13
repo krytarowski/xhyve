@@ -6,6 +6,7 @@ IMG="<path of disk image for FreeBSD>"
 PATH="build/Release:build:$PATH"
 
 xhyve \
+    -a hax \
     -A \
     -m 2G \
     -c 2 \
