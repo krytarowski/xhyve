@@ -1,5 +1,7 @@
 #if defined(__NetBSD__)
 
+#include <sys/types.h>
+#include <sys/module.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -122,71 +124,12 @@ vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 }
 
 
-
+static int
+vmx_setreg(void *arg, int vcpu, int reg, uint64_t val)
 {
 	struct vmx *vmx;
 
 	vmx = (struct vmx *)arg;
-
-	switch (reg) {
-	case VM_REG_GUEST_RAX:
-	case VM_REG_GUEST_RBX:
-	case VM_REG_GUEST_RCX:
-	case VM_REG_GUEST_RDX:
-	case VM_REG_GUEST_RSI:
-	case VM_REG_GUEST_RDI:
-	case VM_REG_GUEST_RBP:
-	case VM_REG_GUEST_R8:
-	case VM_REG_GUEST_R9:
-	case VM_REG_GUEST_R10:
-	case VM_REG_GUEST_R11:
-	case VM_REG_GUEST_R12:
-	case VM_REG_GUEST_R13:
-	case VM_REG_GUEST_R14:
-	case VM_REG_GUEST_R15:
-	case VM_REG_GUEST_RIP:
-	case VM_REG_GUEST_RFLAGS:
-	case VM_REG_GUEST_RSP:
-		return vmx_setreg_gpr(vmx, vcpu, reg, val);
-
-	case VM_REG_GUEST_CR0:
-	case VM_REG_GUEST_CR3:
-	case VM_REG_GUEST_CR4:
-	case VM_REG_GUEST_CR2:
-		return vmx_setreg_cr(vmx, vcpu, reg, val);
-
-	case VM_REG_GUEST_DR7:
-		return vmx_setreg_dr(vmx, vcpu, reg, val);
-
-	case VM_REG_GUEST_ES:
-	case VM_REG_GUEST_CS:
-	case VM_REG_GUEST_SS:
-	case VM_REG_GUEST_DS:
-	case VM_REG_GUEST_FS:
-	case VM_REG_GUEST_GS:
-	case VM_REG_GUEST_LDTR:
-	case VM_REG_GUEST_TR:
-	case VM_REG_GUEST_IDTR:
-	case VM_REG_GUEST_GDTR:
-		// XXX
-
-	case VM_REG_GUEST_EFER:
-		return vmx_setreg_msr(vmx, vcpu, reg, val);
-
-	case VM_REG_GUEST_PDPTE0:
-	case VM_REG_GUEST_PDPTE1:
-	case VM_REG_GUEST_PDPTE2:
-	case VM_REG_GUEST_PDPTE3:
-		// XXX
-
-	case VM_REG_GUEST_INTR_SHADOW:
-		// XXX
-
-	case VM_REG_LAST:
-	default:
-		// XXX
-		break;
-	};
 
 	return 0;
 }
@@ -198,25 +141,6 @@ vmx_getdesc(void *arg, int vcpu, int reg, struct seg_desc *desc)
 
 	vmx = (struct vmx *)arg;
 
-	switch (reg) {
-	case VM_REG_GUEST_ES:
-	case VM_REG_GUEST_CS:
-	case VM_REG_GUEST_SS:
-	case VM_REG_GUEST_DS:
-	case VM_REG_GUEST_FS:
-	case VM_REG_GUEST_GS:
-	case VM_REG_GUEST_LDTR:
-	case VM_REG_GUEST_TR:
-	case VM_REG_GUEST_IDTR:
-	case VM_REG_GUEST_GDTR:
-		return vmx_getreg_seg(vmx, vcpu, reg, desc);
-
-	default:
-		// XXX
-		break;
-	};
-
-
 	return 0;
 }
 
@@ -226,23 +150,6 @@ vmx_setdesc(void *arg, int vcpu, int reg, struct seg_desc *desc)
 	struct vmx *vmx;
 
 	vmx = (struct vmx *)arg;
-
-	switch (reg) {
-	case VM_REG_GUEST_ES:
-	case VM_REG_GUEST_CS:
-	case VM_REG_GUEST_SS:
-	case VM_REG_GUEST_DS:
-	case VM_REG_GUEST_FS:
-	case VM_REG_GUEST_GS:
-	case VM_REG_GUEST_LDTR:
-	case VM_REG_GUEST_TR:
-	case VM_REG_GUEST_IDTR:
-	case VM_REG_GUEST_GDTR:
-		return vmx_setreg_seg(vmx, vcpu, reg, desc);
-	default:
-		// XXX
-		break;
-	};
 
 	return 0;
 }
