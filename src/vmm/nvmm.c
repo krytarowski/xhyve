@@ -1,5 +1,6 @@
 #if defined(__NetBSD__)
 
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -15,6 +16,11 @@
 
 #include <nvmm.h>
 
+struct apic_page {
+        uint32_t reg[XHYVE_PAGE_SIZE / 4];
+};
+static_assert(sizeof(struct apic_page) == XHYVE_PAGE_SIZE);
+
 struct vlapic_vtx {
         struct vlapic vlapic;
         struct pir_desc *pir_desc;
@@ -26,6 +32,7 @@ struct vcpu {
 };
 
 struct vmx {
+	struct apic_page apic_page[VM_MAXCPU]; /* one apic page per vcpu */
 	struct nvmm_machine mach;
 	struct vm *vm;
 };
