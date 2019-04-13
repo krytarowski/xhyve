@@ -569,9 +569,144 @@ vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 	return 0;
 }
 
+
+static int
+vmx_setreg_seg(struct vmx *vmx, int vcpu, int reg, uint64_t val)
+{
+	struct nvmm_x64_state state;
+
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
+
+	state.segs[nvmm_x86_regs_segs[reg]].selector = val; // XXX
+
+	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
+
+	return 0;
+}
+
+static int
+vmx_setreg_gpr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
+{
+	struct nvmm_x64_state state;
+
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
+
+	state.gprs[nvmm_x86_regs_gprs[reg]] = val;
+
+	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
+
+	return 0;
+}
+
+static int
+vmx_setreg_cr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
+{
+	struct nvmm_x64_state state;
+
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_CRS);
+
+	state.crs[nvmm_x86_regs_crs[reg]] = val;
+
+	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_CRS);
+
+	return 0;
+}
+
+static int
+vmx_setreg_dr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
+{
+	struct nvmm_x64_state state;
+
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_DRS);
+
+	state.drs[nvmm_x86_regs_drs[reg]] = val;
+
+	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_DRS);
+
+	return 0;
+}
+
+static int
+vmx_setreg_msr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
+{
+	struct nvmm_x64_state state;
+
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_MSRS);
+
+	state.msrs[nvmm_x86_regs_msrs[reg]] = val;
+
+	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_MSRS);
+
+	return 0;
+}
+
 static int
 vmx_setreg(void *arg, int vcpu, int reg, uint64_t val)
 {
+	struct vmx *vmx;
+
+	vmx = (struct vmx *)arg;
+
+	switch (reg) {
+	case VM_REG_GUEST_RAX:
+	case VM_REG_GUEST_RBX:
+	case VM_REG_GUEST_RCX:
+	case VM_REG_GUEST_RDX:
+	case VM_REG_GUEST_RSI:
+	case VM_REG_GUEST_RDI:
+	case VM_REG_GUEST_RBP:
+	case VM_REG_GUEST_R8:
+	case VM_REG_GUEST_R9:
+	case VM_REG_GUEST_R10:
+	case VM_REG_GUEST_R11:
+	case VM_REG_GUEST_R12:
+	case VM_REG_GUEST_R13:
+	case VM_REG_GUEST_R14:
+	case VM_REG_GUEST_R15:
+	case VM_REG_GUEST_RIP:
+	case VM_REG_GUEST_RFLAGS:
+	case VM_REG_GUEST_RSP:
+		return vmx_setreg_gpr(vmx, vcpu, reg, val);
+
+	case VM_REG_GUEST_CR0:
+	case VM_REG_GUEST_CR3:
+	case VM_REG_GUEST_CR4:
+	case VM_REG_GUEST_CR2:
+		return vmx_setreg_cr(vmx, vcpu, reg, val);
+
+	case VM_REG_GUEST_DR7:
+		return vmx_setreg_dr(vmx, vcpu, reg, val);
+
+	case VM_REG_GUEST_ES:
+	case VM_REG_GUEST_CS:
+	case VM_REG_GUEST_SS:
+	case VM_REG_GUEST_DS:
+	case VM_REG_GUEST_FS:
+	case VM_REG_GUEST_GS:
+	case VM_REG_GUEST_LDTR:
+	case VM_REG_GUEST_TR:
+	case VM_REG_GUEST_IDTR:
+	case VM_REG_GUEST_GDTR:
+		return vmx_setreg_seg(vmx, vcpu, reg, val);
+
+	case VM_REG_GUEST_EFER:
+		return vmx_setreg_msr(vmx, vcpu, reg, val);
+
+	case VM_REG_GUEST_PDPTE0:
+	case VM_REG_GUEST_PDPTE1:
+	case VM_REG_GUEST_PDPTE2:
+	case VM_REG_GUEST_PDPTE3:
+		// XXX
+
+	case VM_REG_GUEST_INTR_SHADOW:
+		// XXX
+
+	case VM_REG_LAST:
+	default:
+		// XXX
+		break;
+	};
+
 	return 0;
 }
 
