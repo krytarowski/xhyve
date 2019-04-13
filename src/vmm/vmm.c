@@ -271,7 +271,7 @@ vmm_init(void)
 #elif defined(__NetBSD__)
 	if (accel == NULL || strcmp(accel, "nvmm") == 0)
 		ops = &vmm_ops_nvmm;
-	else if (strcmp(accel, "hax") == 0
+	else if (strcmp(accel, "hax") == 0)
 		ops = &vmm_ops_hax;
 	else
 		return -1;
