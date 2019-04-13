@@ -396,7 +396,7 @@ vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 	case VM_REG_GUEST_R15:
 	case VM_REG_GUEST_RIP:
 	case VM_REG_GUEST_RFLAGS:
-		nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
+		return vmx_getreg_gpr(arg, vcpu, reg, retval);
 
 	case VM_REG_GUEST_CR0:
 	case VM_REG_GUEST_CR3:
