@@ -268,19 +268,51 @@ vmx_cleanup(void)
         return (0);
 }
 
+static void
+nvmm_io_callback(struct nvmm_io *io)
+{
+	MemTxAttrs attrs = { 0 };
+	int ret;
+
+	ret = address_space_rw(&address_space_io, io->port, attrs, io->data,
+		io->size, !io->in);
+	if (ret != MEMTX_OK) {
+		xhyve_abort("NVMM: I/O Transaction Failed "
+			"[%s, port=%lu, size=%zu]", (io->in ? "in" : "out"),
+			io->port, io->size);
+	}
+
+	/* XXX Needed, otherwise infinite loop. */
+	current_cpu->vcpu_dirty = false;
+}
+
+static void
+nvmm_mem_callback(struct nvmm_mem *mem)
+{
+	cpu_physical_memory_rw(mem->gpa, mem->data, mem->size, mem->write);
+
+	/* XXX Needed, otherwise infinite loop. */
+	current_cpu->vcpu_dirty = false;
+}
+
+static const struct nvmm_callbacks nvmm_callbacks = {
+	.io = nvmm_io_callback,
+	.mem = nvmm_mem_callback
+};
+
 static void *
 vmx_vm_init(struct vm *vm)
 {
 	struct nvmm_x86_conf_cpuid cpuid;
-        struct vmx *vmx;
+	struct vmx *vmx;
 	int ret;
 
-        vmx = malloc(sizeof(struct vmx));
+	vmx = malloc(sizeof(struct vmx));
 	if (vmx == NULL) {
 		xhyve_abort("NVMM: Cannot allocate memory for the vmx struct, error=%d", errno);
 	}
-        memset(vmx, 0, sizeof(struct vmx));
-        vmx->vm = vm;
+	memset(vmx, 0, sizeof(struct vmx));
+	vmx->vm = vm;
 
 	ret = nvmm_machine_create(&vmx->mach);
 	if (ret == -1) {
@@ -296,11 +328,11 @@ vmx_vm_init(struct vm *vm)
 		xhyve_abort("NVMM: Machine configuration failed, error=%d", errno);
 	}
 
-	// XXX: callbacks for io/mem ?
+	nvmm_callbacks_register(&nvmm_callbacks);
 
 	printf("NetBSD Virtual Machine Monitor accelerator is operational\n");
 
-        return (vmx);
+	return (vmx);
 }
 
 static int
@@ -320,27 +352,88 @@ vmx_vcpu_init(void *arg, int vcpuid)
 }
 
 static int
-nvmm_handle_mem(struct nvmm_machine *mach, struct nvmm_vcpu *vcpu,
-                struct nvmm_exit *exit)
+nvmm_handle_memory(struct nvmm_machine *mach, int vcpu, struct nvmm_exit *exit)
 {
 	int ret;
 
 	ret = nvmm_assist_mem(mach, vcpu->cpuid, exit);
 	if (ret == -1) {
-		error_report("NVMM: Mem Assist Failed [gpa=%p]",
-			(void *)exit->u.mem.gpa);
+		xhyve_abort("NVMM: Mem Assist Failed [gpa=%p]", (void *)exit->u.mem.gpa);
 	}
 
 	return ret;
 }
 
 static int
+nvmm_handle_io(struct nvmm_machine *mach, struct nvmm_vcpu *vcpu,
+	struct nvmm_exit *exit)
+{
+	int ret;
+
+	ret = nvmm_assist_io(mach, vcpu->cpuid, exit);
+	if (ret == -1) {
+		error_report("NVMM: I/O Assist Failed [port=%d]",
+			(int)exit->u.io.port);
+	}
+
+	return ret;
+}
+
+static int
+nvmm_handle_msr(struct nvmm_machine *mach, CPUState *cpu,
+	struct nvmm_exit *exit)
+{
+	struct nvmm_vcpu *vcpu = get_nvmm_vcpu(cpu);
+	X86CPU *x86_cpu = X86_CPU(cpu);
+	struct nvmm_x64_state state;
+	uint64_t val;
+	int ret;
+
+	val = exit->u.msr.val;
+
+	switch (exit->u.msr.msr) {
+	case MSR_IA32_APICBASE:
+		if (exit->u.msr.type == NVMM_EXIT_MSR_RDMSR) {
+			val = cpu_get_apic_base(x86_cpu->apic_state);
+		} else {
+			cpu_set_apic_base(x86_cpu->apic_state, val);
+		}
+		break;
+	default:
+		// TODO: more MSRs to add?
+		error_report("NVMM: Unexpected MSR 0x%lx, ignored",
+			exit->u.msr.msr);
+		if (exit->u.msr.type == NVMM_EXIT_MSR_RDMSR) {
+			val = 0;
+		}
+		break;
+	}
+
+	ret = nvmm_vcpu_getstate(mach, vcpu->cpuid, &state,
+		NVMM_X64_STATE_GPRS);
+	if (ret == -1) {
+		return -1;
+	}
+
+	if (exit->u.msr.type == NVMM_EXIT_MSR_RDMSR) {
+		state.gprs[NVMM_X64_GPR_RAX] = (val & 0xFFFFFFFF);
+		state.gprs[NVMM_X64_GPR_RDX] = (val >> 32);
+	}
+
+	state.gprs[NVMM_X64_GPR_RIP] = exit->u.msr.npc;
+
+	return nvmm_vcpu_setstate(mach, vcpu->cpuid, &state,
+		NVMM_X64_STATE_GPRS);
+}
+
+static int
 vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
-        void *suspend_cookie)
+		void *suspend_cookie)
 {
 	struct vmx *vmx;
 	struct nvmm_x64_state state;
 	struct nvmm_exit exit;
+	int ret;
 
 	vmx = (struct vmx *)arg;
 
@@ -355,10 +448,40 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 		case NVMM_EXIT_NONE:
 			break;
 		case NVMM_EXIT_MEMORY:
-			nvmm_handle_mem(&vmx->mach, vcpu, &exit);
+			ret = nvmm_handle_memory(&vmx->mach, vcpu, &exit);
+			break;
+		case NVMM_EXIT_IO:
+			ret = nvmm_handle_io(mach, vcpu, &exit);
+			break;
+		case NVMM_EXIT_MSR:
+			ret = nvmm_handle_msr(mach, cpu, &exit);
+			break;
+		case NVMM_EXIT_INT_READY:
+		case NVMM_EXIT_NMI_READY:
+			break;
+		case NVMM_EXIT_MONITOR:
+		case NVMM_EXIT_MWAIT:
+		case NVMM_EXIT_MWAIT_COND:
+			ret = nvmm_inject_ud(mach, vcpu);
 			break;
 		case NVMM_EXIT_HALTED:
-			return 0;
+			ret = nvmm_handle_halted(mach, cpu, &exit);
+			break;
+		case NVMM_EXIT_SHUTDOWN:
+			qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
+			cpu->exception_index = EXCP_INTERRUPT;
+			ret = 1;
+			break;
+		default:
+			error_report("NVMM: Unexpected VM exit code %lx",
+				exit.reason);
+			nvmm_get_registers(cpu);
+			qemu_mutex_lock_iothread();
+			qemu_system_guest_panicked(cpu_get_crash_info(cpu));
+			qemu_mutex_unlock_iothread();
+			ret = -1;
+			break;
+		}
 		default:
 			return -1;
 		}
@@ -537,21 +660,21 @@ vmx_vcpu_interrupt(int vcpu)
 }
 
 struct vmm_ops vmm_ops_nvmm = {
-        vmx_init,
-        vmx_cleanup,
-        vmx_vm_init,
-        vmx_vcpu_init,
-        vmx_run,
-        vmx_vm_cleanup,
-        vmx_vcpu_cleanup,
-        vmx_getreg,
-        vmx_setreg,
-        vmx_getdesc,
-        vmx_setdesc,
-        vmx_getcap, 
-        vmx_setcap,   
-        vmx_vlapic_init,
-        vmx_vlapic_cleanup,
-        vmx_vcpu_interrupt
+	vmx_init,
+	vmx_cleanup,
+	vmx_vm_init,
+	vmx_vcpu_init,
+	vmx_run,
+	vmx_vm_cleanup,
+	vmx_vcpu_cleanup,
+	vmx_getreg,
+	vmx_setreg,
+	vmx_getdesc,
+	vmx_setdesc,
+	vmx_getcap,
+	vmx_setcap,
+	vmx_vlapic_init,
+	vmx_vlapic_cleanup,
+	vmx_vcpu_interrupt
 };
 #endif
