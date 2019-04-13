@@ -107,6 +107,7 @@ struct vmm_ops {
 extern struct vmm_ops vmm_ops_intel;
 #elif defined(__NetBSD__)
 extern struct vmm_ops vmm_ops_nvmm;
+extern struct vmm_ops vmm_ops_hax;
 #endif
 
 int vmm_init(void);

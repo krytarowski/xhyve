@@ -59,6 +59,7 @@
 #include <xhyve/vmm/io/vrtc.h>
 
 struct vlapic;
+extern char *accel;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wpadded"
@@ -268,7 +269,12 @@ vmm_init(void)
 #if defined(__APPLE__)
 	ops = &vmm_ops_intel;
 #elif defined(__NetBSD__)
-	ops = &vmm_ops_nvmm;
+	if (accel == NULL || strcmp(accel, "nvmm") == 0)
+		ops = &vmm_ops_nvmm;
+	else if (strcmp(accel, "hax") == 0
+		ops = &vmm_ops_hax;
+	else
+		return -1;
 #endif
 
 	error = VMM_INIT();

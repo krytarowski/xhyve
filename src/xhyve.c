@@ -83,6 +83,7 @@ int guest_ncpus;
 int print_mac;
 char *guest_uuid_str;
 static char *pidfile;
+char *accel;
 
 static int guest_vmexit_on_hlt, guest_vmexit_on_pause;
 static int virtio_msix = 1;
@@ -128,8 +129,9 @@ usage(int code)
 {
 
         fprintf(stderr,
-                "Usage: %s [-behuwxMACHPWY] [-c vcpus] [-F <pidfile>] [-g <gdb port>] [-l <lpc>]\n"
+                "Usage: %s [-behuwxMACHPWY] [-a accel] [-c vcpus] [-F <pidfile>] [-g <gdb port>] [-l <lpc>]\n"
 		"       %*s [-m mem] [-p vcpu:hostcpu] [-s <pci>] [-U uuid] -f <fw>\n"
+		"       -a: acceleration backend [nvmm, hax]\n"
 		"       -A: create ACPI tables\n"
 		"       -c: # cpus (default 1)\n"
 		"       -C: include guest memory in core file\n"
@@ -847,6 +849,7 @@ main(int argc, char *argv[])
 	uint64_t rip;
 	size_t memsize;
 
+	accel = NULL;
 	bvmcons = 0;
 	dump_guest_memory = 0;
 	progname = basename(argv[0]);
@@ -858,8 +861,11 @@ main(int argc, char *argv[])
 	rtc_localtime = 1;
 	fw = 0;
 
-	while ((c = getopt(argc, argv, "behvuwxMACHPWY:f:F:g:c:s:m:l:U:")) != -1) {
+	while ((c = getopt(argc, argv, "a:behvuwxMACHPWY:f:F:g:c:s:m:l:U:")) != -1) {
 		switch (c) {
+		case 'a':
+			accel = optarg;
+			break;
 		case 'A':
 			acpi = 1;
 			break;
