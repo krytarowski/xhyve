@@ -320,6 +320,21 @@ vmx_vcpu_init(void *arg, int vcpuid)
 }
 
 static int
+nvmm_handle_mem(struct nvmm_machine *mach, struct nvmm_vcpu *vcpu,
+                struct nvmm_exit *exit)
+{
+	int ret;
+
+	ret = nvmm_assist_mem(mach, vcpu->cpuid, exit);
+	if (ret == -1) {
+		error_report("NVMM: Mem Assist Failed [gpa=%p]",
+			(void *)exit->u.mem.gpa);
+	}
+
+	return ret;
+}
+
+static int
 vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
         void *suspend_cookie)
 {
@@ -338,6 +353,9 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 
 		switch (exit.reason) {
 		case NVMM_EXIT_NONE:
+			break;
+		case NVMM_EXIT_MEMORY:
+			nvmm_handle_mem(&vmx->mach, vcpu, &exit);
 			break;
 		case NVMM_EXIT_HALTED:
 			return 0;
