@@ -8,6 +8,10 @@
 #include <xhyve/support/misc.h>
 #include <xhyve/support/specialreg.h>
 #include <xhyve/vmm/vmm.h>
+#include <xhyve/vmm/vmm_lapic.h>
+#include <xhyve/vmm/io/vatpic.h>
+#include <xhyve/vmm/io/vlapic.h>
+#include <xhyve/vmm/io/vlapic_priv.h>
 
 #include <nvmm.h>
 
