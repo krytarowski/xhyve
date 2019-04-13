@@ -11,6 +11,12 @@
 
 #include <nvmm.h>
 
+struct vlapic_vtx {
+        struct vlapic vlapic;
+        struct pir_desc *pir_desc;
+        struct vmx *vmx;
+};
+
 struct vcpu {
 	bool vcpu_dirty;
 };
