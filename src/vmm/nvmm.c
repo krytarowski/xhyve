@@ -271,28 +271,13 @@ vmx_cleanup(void)
 static void
 nvmm_io_callback(struct nvmm_io *io)
 {
-	MemTxAttrs attrs = { 0 };
-	int ret;
-
-	ret = address_space_rw(&address_space_io, io->port, attrs, io->data,
-		io->size, !io->in);
-	if (ret != MEMTX_OK) {
-		xhyve_abort("NVMM: I/O Transaction Failed "
-			"[%s, port=%lu, size=%zu]", (io->in ? "in" : "out"),
-			io->port, io->size);
-	}
-
-	/* XXX Needed, otherwise infinite loop. */
-	current_cpu->vcpu_dirty = false;
+	// XXX
 }
 
 static void
 nvmm_mem_callback(struct nvmm_mem *mem)
 {
-	cpu_physical_memory_rw(mem->gpa, mem->data, mem->size, mem->write);
-
-	/* XXX Needed, otherwise infinite loop. */
-	current_cpu->vcpu_dirty = false;
+	// XXX
 }
 
 static const struct nvmm_callbacks nvmm_callbacks = {
@@ -356,7 +341,7 @@ nvmm_handle_memory(struct nvmm_machine *mach, int vcpu, struct nvmm_exit *exit)
 {
 	int ret;
 
-	ret = nvmm_assist_mem(mach, vcpu->cpuid, exit);
+	ret = nvmm_assist_mem(mach, vcpu, exit);
 	if (ret == -1) {
 		xhyve_abort("NVMM: Mem Assist Failed [gpa=%p]", (void *)exit->u.mem.gpa);
 	}
@@ -468,18 +453,12 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 			ret = nvmm_handle_halted(mach, cpu, &exit);
 			break;
 		case NVMM_EXIT_SHUTDOWN:
-			qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
-			cpu->exception_index = EXCP_INTERRUPT;
+			// XXX
 			ret = 1;
 			break;
 		default:
-			error_report("NVMM: Unexpected VM exit code %lx",
-				exit.reason);
-			nvmm_get_registers(cpu);
-			qemu_mutex_lock_iothread();
-			qemu_system_guest_panicked(cpu_get_crash_info(cpu));
-			qemu_mutex_unlock_iothread();
-			ret = -1;
+			xhyve_abort("NVMM: Unexpected VM exit code %lx", exit.reason);
+			// XXX
 			break;
 		}
 		default:
@@ -501,13 +480,25 @@ vmx_vcpu_cleanup(void *arg, int vcpuid)
 }
 
 static int
+vmx_getreg_segs(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
+{
+	struct nvmm_x64_state state;
+
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
+
+	*retval = state.segs[nvmm_x86_regs_segs[reg]].selector; // XXX
+
+	return 0;
+}
+
+static int
 vmx_getreg_gpr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
 {
 	struct nvmm_x64_state state;
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
 
-	*retval = state.gprs[nvmm_regs_gpr[reg]];
+	*retval = state.gprs[nvmm_x86_regs_gprs[reg]];
 
 	return 0;
 }
@@ -517,9 +508,9 @@ vmx_getreg_cr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
 {
 	struct nvmm_x64_state state;
 
-	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_CRS);
 
-	*retval = state.gprs[nvmm_regs_gpr[reg]];
+	*retval = state.crs[nvmm_x86_regs_crs[reg]];
 
 	return 0;
 }
@@ -529,9 +520,9 @@ vmx_getreg_dr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
 {
 	struct nvmm_x64_state state;
 
-	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_DRS);
 
-	*retval = state.gprs[nvmm_regs_gpr[reg]];
+	*retval = state.drs[nvmm_x86_regs_drs[reg]];
 
 	return 0;
 }
@@ -541,9 +532,9 @@ vmx_getreg_msr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
 {
 	struct nvmm_x64_state state;
 
-	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_MSRS);
 
-	*retval = state.gprs[nvmm_regs_gpr[reg]];
+	*retval = state.msrs[nvmm_x86_regs_msrs[reg]];
 
 	return 0;
 }
@@ -604,8 +595,14 @@ vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 	case VM_REG_GUEST_PDPTE1:
 	case VM_REG_GUEST_PDPTE2:
 	case VM_REG_GUEST_PDPTE3:
+		// XXX
+
 	case VM_REG_GUEST_INTR_SHADOW:
+		// XXX
+
 	case VM_REG_LAST:
+	default:
+		// XXX
 	}
 
 
