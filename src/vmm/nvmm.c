@@ -152,7 +152,7 @@ static const uint64_t nvmm_x86_regs_crs[] = {
 
 };
 
-static const uint64_t nvmm_x86_regs_dbs[] = {
+static const uint64_t nvmm_x86_regs_drs[] = {
         NVMM_X64_NDR,     /* VM_REG_GUEST_RAX */
         NVMM_X64_NDR,     /* VM_REG_GUEST_RBX */
         NVMM_X64_NDR,     /* VM_REG_GUEST_RCX */
@@ -355,9 +355,9 @@ nvmm_handle_io(struct nvmm_machine *mach, struct nvmm_vcpu *vcpu,
 {
 	int ret;
 
-	ret = nvmm_assist_io(mach, vcpu->cpuid, exit);
+	ret = nvmm_assist_io(mach, vcpu, exit);
 	if (ret == -1) {
-		error_report("NVMM: I/O Assist Failed [port=%d]",
+		xhyve_abort("NVMM: I/O Assist Failed [port=%d]",
 			(int)exit->u.io.port);
 	}
 
@@ -365,50 +365,12 @@ nvmm_handle_io(struct nvmm_machine *mach, struct nvmm_vcpu *vcpu,
 }
 
 static int
-nvmm_handle_msr(struct nvmm_machine *mach, CPUState *cpu,
+nvmm_handle_msr(struct nvmm_machine *mach, int vcpu,
 	struct nvmm_exit *exit)
 {
-	struct nvmm_vcpu *vcpu = get_nvmm_vcpu(cpu);
-	X86CPU *x86_cpu = X86_CPU(cpu);
-	struct nvmm_x64_state state;
-	uint64_t val;
-	int ret;
+	// XXX
 
-	val = exit->u.msr.val;
-
-	switch (exit->u.msr.msr) {
-	case MSR_IA32_APICBASE:
-		if (exit->u.msr.type == NVMM_EXIT_MSR_RDMSR) {
-			val = cpu_get_apic_base(x86_cpu->apic_state);
-		} else {
-			cpu_set_apic_base(x86_cpu->apic_state, val);
-		}
-		break;
-	default:
-		// TODO: more MSRs to add?
-		error_report("NVMM: Unexpected MSR 0x%lx, ignored",
-			exit->u.msr.msr);
-		if (exit->u.msr.type == NVMM_EXIT_MSR_RDMSR) {
-			val = 0;
-		}
-		break;
-	}
-
-	ret = nvmm_vcpu_getstate(mach, vcpu->cpuid, &state,
-		NVMM_X64_STATE_GPRS);
-	if (ret == -1) {
-		return -1;
-	}
-
-	if (exit->u.msr.type == NVMM_EXIT_MSR_RDMSR) {
-		state.gprs[NVMM_X64_GPR_RAX] = (val & 0xFFFFFFFF);
-		state.gprs[NVMM_X64_GPR_RDX] = (val >> 32);
-	}
-
-	state.gprs[NVMM_X64_GPR_RIP] = exit->u.msr.npc;
-
-	return nvmm_vcpu_setstate(mach, vcpu->cpuid, &state,
-		NVMM_X64_STATE_GPRS);
+	return 0;
 }
 
 static int
@@ -436,10 +398,10 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 			ret = nvmm_handle_memory(&vmx->mach, vcpu, &exit);
 			break;
 		case NVMM_EXIT_IO:
-			ret = nvmm_handle_io(mach, vcpu, &exit);
+			ret = nvmm_handle_io(&vmx->mach, vcpu, &exit);
 			break;
 		case NVMM_EXIT_MSR:
-			ret = nvmm_handle_msr(mach, cpu, &exit);
+			ret = nvmm_handle_msr(&vmx->mach, vcpu, &exit);
 			break;
 		case NVMM_EXIT_INT_READY:
 		case NVMM_EXIT_NMI_READY:
@@ -447,10 +409,10 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 		case NVMM_EXIT_MONITOR:
 		case NVMM_EXIT_MWAIT:
 		case NVMM_EXIT_MWAIT_COND:
-			ret = nvmm_inject_ud(mach, vcpu);
+			// XXX
 			break;
 		case NVMM_EXIT_HALTED:
-			ret = nvmm_handle_halted(mach, cpu, &exit);
+			// XXX
 			break;
 		case NVMM_EXIT_SHUTDOWN:
 			// XXX
@@ -460,9 +422,6 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 			xhyve_abort("NVMM: Unexpected VM exit code %lx", exit.reason);
 			// XXX
 			break;
-		}
-		default:
-			return -1;
 		}
 	}
 
@@ -480,7 +439,7 @@ vmx_vcpu_cleanup(void *arg, int vcpuid)
 }
 
 static int
-vmx_getreg_segs(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
+vmx_getreg_seg(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
 {
 	struct nvmm_x64_state state;
 
@@ -565,16 +524,16 @@ vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 	case VM_REG_GUEST_RIP:
 	case VM_REG_GUEST_RFLAGS:
 	case VM_REG_GUEST_RSP:
-		return vmx_getreg_gpr(wmx, vcpu, reg, retval);
+		return vmx_getreg_gpr(vmx, vcpu, reg, retval);
 
 	case VM_REG_GUEST_CR0:
 	case VM_REG_GUEST_CR3:
 	case VM_REG_GUEST_CR4:
 	case VM_REG_GUEST_CR2:
-		return vmx_getreg_cr(wmx, vcpu, reg, retval);
+		return vmx_getreg_cr(vmx, vcpu, reg, retval);
 
 	case VM_REG_GUEST_DR7:
-		return vmx_getreg_dr(wmx, vcpu, reg, retval);
+		return vmx_getreg_dr(vmx, vcpu, reg, retval);
 
 	case VM_REG_GUEST_ES:
 	case VM_REG_GUEST_CS:
@@ -586,10 +545,10 @@ vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 	case VM_REG_GUEST_TR:
 	case VM_REG_GUEST_IDTR:
 	case VM_REG_GUEST_GDTR:
-		return vmx_getreg_seg(wmx, vcpu, reg, retval);
+		return vmx_getreg_seg(vmx, vcpu, reg, retval);
 
 	case VM_REG_GUEST_EFER:
-		return vmx_getreg_msr(wmx, vcpu, reg, retval);
+		return vmx_getreg_msr(vmx, vcpu, reg, retval);
 
 	case VM_REG_GUEST_PDPTE0:
 	case VM_REG_GUEST_PDPTE1:
@@ -603,7 +562,8 @@ vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 	case VM_REG_LAST:
 	default:
 		// XXX
-	}
+		break;
+	};
 
 
 	return 0;
