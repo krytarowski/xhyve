@@ -641,7 +641,7 @@ vmx_setreg_gpr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
 {
 	struct nvmm_x64_state state;
 
-	DPRINTF("vmx_setreg_gpr(vcpu=%d, reg=%d)\n", vcpu, reg);
+	DPRINTF("vmx_setreg_gpr(vcpu=%d, reg=%d, val=%" PRIx64 ")\n", vcpu, reg, val);
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
 
@@ -657,7 +657,7 @@ vmx_setreg_cr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
 {
 	struct nvmm_x64_state state;
 
-	DPRINTF("vmx_setreg_cr(vcpu=%d, reg=%d)\n", vcpu, reg);
+	DPRINTF("vmx_setreg_cr(vcpu=%d, reg=%d, val=%" PRIx64 ")\n", vcpu, reg, val);
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_CRS);
 
@@ -673,7 +673,7 @@ vmx_setreg_dr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
 {
 	struct nvmm_x64_state state;
 
-	DPRINTF("vmx_setreg_dr(vcpu=%d, reg=%d)\n", vcpu, reg);
+	DPRINTF("vmx_setreg_dr(vcpu=%d, reg=%d, val=%" PRIx64 ")\n", vcpu, reg, val);
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_DRS);
 
@@ -689,7 +689,7 @@ vmx_setreg_msr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
 {
 	struct nvmm_x64_state state;
 
-	DPRINTF("vmx_setreg_msr(vcpu=%d, reg=%d)\n", vcpu, reg);
+	DPRINTF("vmx_setreg_msr(vcpu=%d, reg=%d, val=%" PRIx64 ")\n", vcpu, reg, val);
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_MSRS);
 
@@ -705,7 +705,7 @@ vmx_setreg(void *arg, int vcpu, int reg, uint64_t val)
 {
 	struct vmx *vmx;
 
-	DPRINTF("vmx_setreg(vcpu=%d, reg=%d)\n", vcpu, reg);
+	DPRINTF("vmx_setreg(vcpu=%d, reg=%d, val=%" PRIx64 ")\n", vcpu, reg, val);
 
 	vmx = (struct vmx *)arg;
 
