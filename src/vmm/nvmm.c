@@ -19,7 +19,7 @@
 
 #include <nvmm.h>
 
-static int debug = 1;
+static int debug = 0;
         
 #define DPRINTF(fmt, ...) do { if (debug) printf("%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ## __VA_ARGS__); } while (0)
 
