@@ -7,6 +7,7 @@ STAND=	${.CURDIR}/../stand
 
 CPPFLAGS+=	-I${STAND}/libsa
 CPPFLAGS+=	-D__dead2=__dead
+CPPFLAGS+=	-D__weak_symbol=__weak
 
 LIB=	userboot-freebsd
 
