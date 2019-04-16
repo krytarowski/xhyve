@@ -21,7 +21,7 @@
 
 static int debug = 0;
         
-#define DPRINTF(fmt, ...) do { if (debug) printf("%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ## __VA_ARGS__); } while (0)
+#define DPRINTF(fmt, ...) do { if (debug) printf("%s:%d:%s(): " fmt "\r", __FILE__, __LINE__, __func__, ## __VA_ARGS__); } while (0)
 
 struct apic_page {
         uint32_t reg[XHYVE_PAGE_SIZE / 4];
