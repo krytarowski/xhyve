@@ -19,14 +19,14 @@
 
 #include <nvmm.h>
 
-static int debug = 1;
+static int debug = 2;
         
 #define DPRINTF(fmt, ...) do { if (debug) printf("%s:%d:%s(): " fmt "\r", __FILE__, __LINE__, __func__, ## __VA_ARGS__); } while (0)
 
 static void
 vmm_vcpu_dump(struct nvmm_machine *mach, nvmm_cpuid_t cpuid)
 {
-	if (debug == 0)
+	if (debug > 1)
 		return;
 
         struct nvmm_x64_state state;
@@ -481,7 +481,7 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 	vmx = (struct vmx *)arg;
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
-	state.gprs[NVMM_X64_GPR_RIP] = 0;
+	state.gprs[NVMM_X64_GPR_RIP] = rip;
 	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
 
 	vmm_vcpu_dump((void *)&vmx->mach, vcpu);
@@ -748,7 +748,9 @@ vmx_setreg_gpr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
 
+	vmm_vcpu_dump((void *)&vmx->mach, vcpu);
 	state.gprs[nvmm_x86_regs_gprs[reg]] = val;
+	vmm_vcpu_dump((void *)&vmx->mach, vcpu);
 
 	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
 
