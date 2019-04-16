@@ -23,7 +23,50 @@ static int debug = 1;
         
 #define DPRINTF(fmt, ...) do { if (debug) printf("%s:%d:%s(): " fmt "\r", __FILE__, __LINE__, __func__, ## __VA_ARGS__); } while (0)
 
-int nvmm_vcpu_dump(struct nvmm_machine *mach, nvmm_cpuid_t cpuid);
+static void
+vmm_vcpu_dump(struct nvmm_machine *mach, nvmm_cpuid_t cpuid)
+{
+	if (debug == 0)
+		return;
+
+        struct nvmm_x64_state state;
+        uint16_t *attr;   
+        size_t i;
+        int ret;
+
+        const char *segnames[] = {
+                "ES", "CS", "SS", "DS", "FS", "GS", "GDT", "IDT", "LDT", "TR"
+        };
+
+        ret = nvmm_vcpu_getstate(mach, cpuid, &state, NVMM_X64_STATE_ALL);
+        if (ret == -1)    
+		abort();
+
+        printf("+ VCPU id=%d\n\r", (int)cpuid);
+        printf("| -> RIP=%"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RIP]);
+        printf("| -> RSP=%"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RSP]);
+        printf("| -> RAX=%"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RAX]);
+        printf("| -> RBX=%"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RBX]);
+
+        printf("| -> RCX=%"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RCX]);                                                                                        
+        printf("| -> RFLAGS=%p\n\r", (void *)state.gprs[NVMM_X64_GPR_RFLAGS]);
+        for (i = 0; i < NVMM_X64_NSEG; i++) {
+                attr = (uint16_t *)&state.segs[i].attrib;
+                printf("| -> %s: sel=0x%x base=%"PRIx64", limit=%x, attrib=%x\n\r",
+                    segnames[i],
+                    state.segs[i].selector,
+                    state.segs[i].base,
+                    state.segs[i].limit,
+                    *attr);                                                                                                                                  
+        }
+        printf("| -> MSR_EFER=%"PRIx64"\n\r", state.msrs[NVMM_X64_MSR_EFER]);
+        printf("| -> CR0=%"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR0]);
+        printf("| -> CR3=%"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR3]);
+        printf("| -> CR4=%"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR4]);
+        printf("| -> CR8=%"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR8]);
+
+        return;
+}
 
 struct apic_page {
         uint32_t reg[XHYVE_PAGE_SIZE / 4];
@@ -441,7 +484,7 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 	state.gprs[NVMM_X64_GPR_RIP] = 0;
 	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
 
-	nvmm_vcpu_dump((void *)&vmx->mach, vcpu);
+	vmm_vcpu_dump((void *)&vmx->mach, vcpu);
 
 	while (1) {
 		nvmm_vcpu_run(&vmx->mach, vcpu, &exit);
