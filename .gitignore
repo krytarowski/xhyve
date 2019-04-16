@@ -8,3 +8,4 @@ cscope.*
 tags
 TAGS
 vers.c
+*.core
