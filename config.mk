@@ -27,7 +27,6 @@ ENV := \
 ###############################################################################
 
 CFLAGS_OPT := \
-  -Os \
   -fstrict-aliasing
 
 CFLAGS_WARN := \
@@ -45,6 +44,7 @@ CFLAGS_DBG := \
   -g
 
 CFLAGS := \
+  -g -O0 \
   -pthread \
   -x c \
   -std=c11 \
