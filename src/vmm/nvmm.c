@@ -300,15 +300,24 @@ nvmm_io_callback(struct nvmm_io *io)
 	DPRINTF("nvmm_io_callback()\n");
 }
 
+struct nvmm_machine *global_mach;
+
 static void
 nvmm_mem_callback(struct nvmm_mem *mem)
 {
-	DPRINTF("nvmm_mem_callback() mem.gpa=%" PRIx64 ", mem.write=%s, size=%zu, data=%p\n", mem->gpa, mem->write, mem->size, mem->data);
+	uintptr_t hva;
+	nvmm_prot_t prot;
+
+	DPRINTF("nvmm_mem_callback() mem.gpa=%" PRIx64 ", mem.write=%s, size=%zu, data=%p\n", mem->gpa, mem->write ? "true" : "false", mem->size, mem->data);
+
+	nvmm_gpa_to_hva(&global_mach, mem->gpa, &hva, &prot);
+
+	DPRINTF("nvmm_mem_callback() hva=%" PRIxPTR ", prot=%" PRIx64 "\n", hva, (uint64_t)prot);
 
 	if (mem->write) {
-		memcpy(mmiobuf + off, mem->data, mem->size);
+		memcpy(hva, mem->data, mem->size);
 	} else {
-		memcpy(mem->data, mmiobuf + off, mem->size);
+		memcpy(mem->data, hva, mem->size);
 	}
 }
 
@@ -970,6 +979,8 @@ vmm_mem_alloc(void *arg, uint64_t gpa, size_t size, uint64_t prot)
 	if (!object) {
 		xhyve_abort("vmm_mem_alloc failed\n");
 	}
+
+	global_mach = &vmx->mach;
 
 	hvProt = (prot & XHYVE_PROT_READ) ? PROT_READ : 0;
 	hvProt = (prot & XHYVE_PROT_WRITE) ? PROT_WRITE : 0;
