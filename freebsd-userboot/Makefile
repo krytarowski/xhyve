@@ -5,6 +5,9 @@ STAND=	${.CURDIR}/../stand
 .PATH: ${STAND}/userboot/userboot
 .PATH: ${STAND}/common
 
+CPPFLAGS+=	-I${STAND}/libsa
+CPPFLAGS+=	-D__dead2=__dead
+
 LIB=	userboot-freebsd
 
 SRCS=	#
