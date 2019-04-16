@@ -303,7 +303,13 @@ nvmm_io_callback(struct nvmm_io *io)
 static void
 nvmm_mem_callback(struct nvmm_mem *mem)
 {
-	DPRINTF("nvmm_mem_callback()\n");
+	DPRINTF("nvmm_mem_callback() mem.gpa=%" PRIx64 ", mem.write=%s, size=%zu, data=%p\n", mem->gpa, mem->write, mem->size, mem->data);
+
+	if (mem->write) {
+		memcpy(mmiobuf + off, mem->data, mem->size);
+	} else {
+		memcpy(mem->data, mmiobuf + off, mem->size);
+	}
 }
 
 static const struct nvmm_callbacks nvmm_callbacks = {
