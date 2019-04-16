@@ -449,27 +449,34 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 			ret = nvmm_handle_memory(&vmx->mach, vcpu, &exit);
 			break;
 		case NVMM_EXIT_IO:
+			abort();
 			ret = nvmm_handle_io(&vmx->mach, vcpu, &exit);
 			break;
 		case NVMM_EXIT_MSR:
+			abort();
 			ret = nvmm_handle_msr(&vmx->mach, vcpu, &exit);
 			break;
 		case NVMM_EXIT_INT_READY:
 		case NVMM_EXIT_NMI_READY:
+			abort();
 			break;
 		case NVMM_EXIT_MONITOR:
 		case NVMM_EXIT_MWAIT:
 		case NVMM_EXIT_MWAIT_COND:
 			// XXX
+			abort();
 			break;
 		case NVMM_EXIT_HALTED:
 			// XXX
+			abort();
 			break;
 		case NVMM_EXIT_SHUTDOWN:
 			// XXX
+			abort();
 			ret = 1;
 			break;
 		default:
+			abort();
 			xhyve_abort("NVMM: Unexpected VM exit code %lx", exit.reason);
 			// XXX
 			break;
