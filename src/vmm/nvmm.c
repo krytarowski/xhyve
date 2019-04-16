@@ -879,9 +879,14 @@ vmm_mem_alloc(void *arg, uint64_t gpa, size_t size, uint64_t prot)
 	hvProt = (prot & XHYVE_PROT_WRITE) ? PROT_WRITE : 0;
 	hvProt = (prot & XHYVE_PROT_EXECUTE) ? PROT_EXEC : 0;
 
-	if (nvmm_gpa_map(&vmx->mach, (uintptr_t)object, gpa, size, hvProt))
-	{
-		xhyve_abort("hv_vm_map failed\n");
+	printf("nvmm_hva_map(%p, %" PRIxPTR ", %zu)\n", &vmx->mach, object, size);
+	if (nvmm_hva_map(&vmx->mach, (uintptr_t)object, size)) {
+		xhyve_abort("nvmm_hva_map failed\n");
+	}
+
+	printf("nvmm_gpa_map(%p, %" PRIxPTR ", %" PRIxPTR ", %zu, %d)\n", &vmx->mach, object, gpa, size, hvProt);
+	if (nvmm_gpa_map(&vmx->mach, (uintptr_t)object, gpa, size, hvProt) == -1) {
+		xhyve_abort("nvmm_gpa_map failed\n");
 	}
 
 	return object;
@@ -894,7 +899,13 @@ vmm_mem_free(void *arg, uint64_t gpa, size_t size, void *object)
 
 	vmx = (struct vmx *)arg;
 
-	if (nvmm_gpa_unmap(&vmx->mach, object, gpa, size))
+	if (nvmm_gpa_unmap(&vmx->mach, object, gpa, size) == -1) {
+		xhyve_abort("nvmm_gpa_unmap failed\n");
+	}
+
+	if (nvmm_hva_unmap(&vmx->mach, object, size) == -1) {
+		xhyve_abort("nvmm_hva_unmap failed\n");
+	}
 
 	free(object);
 }
