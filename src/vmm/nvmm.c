@@ -741,6 +741,8 @@ vmx_setreg(void *arg, int vcpu, int reg, uint64_t val)
 
 	case VM_REG_GUEST_ES:
 	case VM_REG_GUEST_CS:
+		DPRINTF("CS");
+		abort();
 	case VM_REG_GUEST_SS:
 	case VM_REG_GUEST_DS:
 	case VM_REG_GUEST_FS:
