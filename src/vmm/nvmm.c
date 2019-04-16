@@ -19,6 +19,10 @@
 
 #include <nvmm.h>
 
+static int debug = 1;
+        
+#define DPRINTF(fmt, ...) do { if (debug) printf("%s:%d:%s(): " fmt, __FILE__, __LINE__, __func__, ## __VA_ARGS__); } while (0)
+
 struct apic_page {
         uint32_t reg[XHYVE_PAGE_SIZE / 4];
 };
@@ -277,7 +281,7 @@ vmx_init(void)
 		xhyve_abort("NVMM: Wrong state size %zu", cap.state_size);
 	}
 
-	printf("NetBSD Virtual Machine Monitor accelerator is available\n");
+	DPRINTF("NetBSD Virtual Machine Monitor accelerator is available\n");
 
 	return 0;
 }
@@ -285,19 +289,21 @@ vmx_init(void)
 static int
 vmx_cleanup(void)
 {
+	DPRINTF("vmx_cleanup()\n");
+
         return (0);
 }
 
 static void
 nvmm_io_callback(struct nvmm_io *io)
 {
-	// XXX
+	DPRINTF("nvmm_io_callback()\n");
 }
 
 static void
 nvmm_mem_callback(struct nvmm_mem *mem)
 {
-	// XXX
+	DPRINTF("nvmm_mem_callback()\n");
 }
 
 static const struct nvmm_callbacks nvmm_callbacks = {
@@ -311,6 +317,8 @@ vmx_vm_init(struct vm *vm)
 	struct nvmm_x86_conf_cpuid cpuid;
 	struct vmx *vmx;
 	int ret;
+
+	DPRINTF("vmx_vm_init()\n");
 
 	vmx = malloc(sizeof(struct vmx));
 	if (vmx == NULL) {
@@ -335,7 +343,7 @@ vmx_vm_init(struct vm *vm)
 
 	nvmm_callbacks_register(&nvmm_callbacks);
 
-	printf("NetBSD Virtual Machine Monitor accelerator is operational\n");
+	DPRINTF("NetBSD Virtual Machine Monitor accelerator is operational\n");
 
 	return (vmx);
 }
@@ -345,6 +353,8 @@ vmx_vcpu_init(void *arg, int vcpuid)
 {
 	struct vmx *vmx;
 	int ret;
+
+	DPRINTF("vmx_vcpu_init(vcpuid=%d)\n", vcpuid);
 
 	vmx = (struct vmx *)arg;
 
@@ -361,6 +371,8 @@ nvmm_handle_memory(struct nvmm_machine *mach, int vcpu, struct nvmm_exit *exit)
 {
 	int ret;
 
+	DPRINTF("nvmm_handle_memory(vcpuid=%d)\n", vcpu);
+
 	ret = nvmm_assist_mem(mach, vcpu, exit);
 	if (ret == -1) {
 		xhyve_abort("NVMM: Mem Assist Failed [gpa=%p]", (void *)exit->u.mem.gpa);
@@ -375,6 +387,8 @@ nvmm_handle_io(struct nvmm_machine *mach, struct nvmm_vcpu *vcpu,
 {
 	int ret;
 
+	DPRINTF("nvmm_handle_io(vcpuid=%d)\n", vcpu);
+
 	ret = nvmm_assist_io(mach, vcpu, exit);
 	if (ret == -1) {
 		xhyve_abort("NVMM: I/O Assist Failed [port=%d]",
@@ -388,7 +402,7 @@ static int
 nvmm_handle_msr(struct nvmm_machine *mach, int vcpu,
 	struct nvmm_exit *exit)
 {
-	// XXX
+	DPRINTF("nvmm_handle_msr(vcpuid=%d)\n", vcpu);
 
 	return 0;
 }
@@ -401,6 +415,8 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 	struct nvmm_x64_state state;
 	struct nvmm_exit exit;
 	int ret;
+
+	DPRINTF("vmx_run(vcpuid=%d, rip=%" PRIxREGISTER ")\n", vcpu, rip);
 
 	vmx = (struct vmx *)arg;
 
@@ -451,17 +467,21 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 static void
 vmx_vm_cleanup(void *arg)
 {
+	DPRINTF("vmx_vm_cleanup()\n");
 }
 
 static void
 vmx_vcpu_cleanup(void *arg, int vcpuid)
 {
+	DPRINTF("vmx_vcpu_cleanup(vcpu=%d)\n", vcpuid);
 }
 
 static int
 vmx_getreg_seg(struct vmx *vmx, int vcpu, int reg, struct seg_desc *desc)
 {
 	struct nvmm_x64_state state;
+
+	DPRINTF("vmx_getreg_seg(vcpu=%d, reg=%d)\n", vcpu, reg);
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
@@ -475,6 +495,8 @@ vmx_getreg_gpr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
 {
 	struct nvmm_x64_state state;
 
+	DPRINTF("vmx_getreg_gpr(vcpu=%d, reg=%d)\n", vcpu, reg);
+
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
 
 	*retval = state.gprs[nvmm_x86_regs_gprs[reg]];
@@ -486,6 +508,8 @@ static int
 vmx_getreg_cr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
 {
 	struct nvmm_x64_state state;
+
+	DPRINTF("vmx_getreg_cr(vcpu=%d, reg=%d)\n", vcpu, reg);
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_CRS);
 
@@ -499,6 +523,8 @@ vmx_getreg_dr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
 {
 	struct nvmm_x64_state state;
 
+	DPRINTF("vmx_getreg_dr(vcpu=%d, reg=%d)\n", vcpu, reg);
+
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_DRS);
 
 	*retval = state.drs[nvmm_x86_regs_drs[reg]];
@@ -511,6 +537,8 @@ vmx_getreg_msr(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
 {
 	struct nvmm_x64_state state;
 
+	DPRINTF("vmx_getreg_msr(vcpu=%d, reg=%d)\n", vcpu, reg);
+
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_MSRS);
 
 	*retval = state.msrs[nvmm_x86_regs_msrs[reg]];
@@ -522,6 +550,8 @@ static int
 vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 {
 	struct vmx *vmx;
+
+	DPRINTF("vmx_getreg(vcpu=%d, reg=%d)\n", vcpu, reg);
 
 	vmx = (struct vmx *)arg;
 
@@ -595,6 +625,8 @@ vmx_setreg_seg(struct vmx *vmx, int vcpu, int reg, struct seg_desc *desc)
 {
 	struct nvmm_x64_state state;
 
+	DPRINTF("vmx_setreg_seg(vcpu=%d, reg=%d)\n", vcpu, reg);
+
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
 	memcpy(&state.segs[nvmm_x86_regs_segs[reg]], desc, sizeof(*desc));
@@ -608,6 +640,8 @@ static int
 vmx_setreg_gpr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
 {
 	struct nvmm_x64_state state;
+
+	DPRINTF("vmx_setreg_gpr(vcpu=%d, reg=%d)\n", vcpu, reg);
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
 
@@ -623,6 +657,8 @@ vmx_setreg_cr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
 {
 	struct nvmm_x64_state state;
 
+	DPRINTF("vmx_setreg_cr(vcpu=%d, reg=%d)\n", vcpu, reg);
+
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_CRS);
 
 	state.crs[nvmm_x86_regs_crs[reg]] = val;
@@ -636,6 +672,8 @@ static int
 vmx_setreg_dr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
 {
 	struct nvmm_x64_state state;
+
+	DPRINTF("vmx_setreg_dr(vcpu=%d, reg=%d)\n", vcpu, reg);
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_DRS);
 
@@ -651,6 +689,8 @@ vmx_setreg_msr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
 {
 	struct nvmm_x64_state state;
 
+	DPRINTF("vmx_setreg_msr(vcpu=%d, reg=%d)\n", vcpu, reg);
+
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_MSRS);
 
 	state.msrs[nvmm_x86_regs_msrs[reg]] = val;
@@ -664,6 +704,8 @@ static int
 vmx_setreg(void *arg, int vcpu, int reg, uint64_t val)
 {
 	struct vmx *vmx;
+
+	DPRINTF("vmx_setreg(vcpu=%d, reg=%d)\n", vcpu, reg);
 
 	vmx = (struct vmx *)arg;
 
@@ -735,6 +777,8 @@ vmx_getdesc(void *arg, int vcpu, int reg, struct seg_desc *desc)
 {
 	struct vmx *vmx;
 
+	DPRINTF("vmx_getdesc(vcpu=%d, reg=%d)\n", vcpu, reg);
+
 	vmx = (struct vmx *)arg;
 
 	switch (reg) {
@@ -764,6 +808,8 @@ vmx_setdesc(void *arg, int vcpu, int reg, struct seg_desc *desc)
 {
 	struct vmx *vmx;
 
+	DPRINTF("vmx_setdesc(vcpu=%d, reg=%d)\n", vcpu, reg);
+
 	vmx = (struct vmx *)arg;
 
 	switch (reg) {
@@ -789,12 +835,16 @@ vmx_setdesc(void *arg, int vcpu, int reg, struct seg_desc *desc)
 static int
 vmx_getcap(void *arg, int vcpu, int type, int *retval)
 {
+	DPRINTF("vmx_getcap(vcpu=%d, type=%d)\n", vcpu, type);
+
 	return 0;
 }
 
 static int
 vmx_setcap(void *arg, int vcpu, int type, int val)
 {
+	DPRINTF("vmx_setcap(vcpu=%d, type=%d)\n", vcpu, type);
+
 	return 0;
 }
 
@@ -804,6 +854,8 @@ vmx_vlapic_init(void *arg, int vcpuid)
         struct vmx *vmx;
         struct vlapic *vlapic;
         struct vlapic_vtx *vlapic_vtx;
+
+	DPRINTF("vmx_vlapic_init(vcpuid=%d)\n", vcpuid);
 
         vmx = arg;
 
@@ -825,6 +877,8 @@ vmx_vlapic_init(void *arg, int vcpuid)
 static void
 vmx_vlapic_cleanup(UNUSED void *arg, struct vlapic *vlapic)
 {
+	DPRINTF("vmx_vlapic_cleanup()\n");
+
         vlapic_cleanup(vlapic);
         free(vlapic);
 }
@@ -832,7 +886,7 @@ vmx_vlapic_cleanup(UNUSED void *arg, struct vlapic *vlapic)
 static void
 vmx_vcpu_interrupt(int vcpu)
 {
-
+	DPRINTF("vmx_vcpu_interrupt(vcpu=%d)\n", vcpu);
 }
 
 struct vmm_ops vmm_ops_nvmm = {
@@ -868,6 +922,8 @@ vmm_mem_alloc(void *arg, uint64_t gpa, size_t size, uint64_t prot)
 	int hvProt;
 	struct vmx *vmx;
 
+	DPRINTF("vmm_mem_alloc(gpa=%" PRIx64 ", size=%zu, prot=%" PRIx64 ")\n", gpa, size, prot);
+
 	vmx = (struct vmx *)arg;
 	object = valloc(size);
 
@@ -879,12 +935,12 @@ vmm_mem_alloc(void *arg, uint64_t gpa, size_t size, uint64_t prot)
 	hvProt = (prot & XHYVE_PROT_WRITE) ? PROT_WRITE : 0;
 	hvProt = (prot & XHYVE_PROT_EXECUTE) ? PROT_EXEC : 0;
 
-	printf("nvmm_hva_map(%p, %" PRIxPTR ", %zu)\n", &vmx->mach, object, size);
+	DPRINTF("nvmm_hva_map(%p, %" PRIxPTR ", %zu)\n", &vmx->mach, object, size);
 	if (nvmm_hva_map(&vmx->mach, (uintptr_t)object, size)) {
 		xhyve_abort("nvmm_hva_map failed\n");
 	}
 
-	printf("nvmm_gpa_map(%p, %" PRIxPTR ", %" PRIxPTR ", %zu, %d)\n", &vmx->mach, object, gpa, size, hvProt);
+	DPRINTF("nvmm_gpa_map(%p, %" PRIxPTR ", %" PRIxPTR ", %zu, %d)\n", &vmx->mach, object, gpa, size, hvProt);
 	if (nvmm_gpa_map(&vmx->mach, (uintptr_t)object, gpa, size, hvProt) == -1) {
 		xhyve_abort("nvmm_gpa_map failed\n");
 	}
@@ -896,6 +952,8 @@ void
 vmm_mem_free(void *arg, uint64_t gpa, size_t size, void *object)
 {
 	struct vmx *vmx;
+
+	DPRINTF("vmm_mem_free(gpa=%" PRIx64 ", size=%zu)\n", gpa, size);
 
 	vmx = (struct vmx *)arg;
 
