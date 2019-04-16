@@ -23,6 +23,8 @@ static int debug = 1;
         
 #define DPRINTF(fmt, ...) do { if (debug) printf("%s:%d:%s(): " fmt "\r", __FILE__, __LINE__, __func__, ## __VA_ARGS__); } while (0)
 
+int nvmm_vcpu_dump(struct nvmm_machine *mach, nvmm_cpuid_t cpuid);
+
 struct apic_page {
         uint32_t reg[XHYVE_PAGE_SIZE / 4];
 };
@@ -438,6 +440,8 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
 	state.gprs[NVMM_X64_GPR_RIP] = 0;
 	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
+
+	nvmm_vcpu_dump((void *)&vmx->mach, vcpu);
 
 	while (1) {
 		nvmm_vcpu_run(&vmx->mach, vcpu, &exit);
