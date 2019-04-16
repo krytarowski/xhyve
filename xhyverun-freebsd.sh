@@ -9,7 +9,6 @@ export LD_LIBRARY_PATH=/usr/local/lib
 #lldb --
 xhyve \
     -a nvmm \
-    -A \
     -m 2G \
     -c 2 \
     -l com1,stdio \
