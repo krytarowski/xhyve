@@ -604,14 +604,14 @@ vmx_getreg(void *arg, int vcpu, int reg, uint64_t *retval)
 	case VM_REG_GUEST_PDPTE1:
 	case VM_REG_GUEST_PDPTE2:
 	case VM_REG_GUEST_PDPTE3:
-		// XXX
+		abort();
 
 	case VM_REG_GUEST_INTR_SHADOW:
-		// XXX
+		abort();
 
 	case VM_REG_LAST:
 	default:
-		// XXX
+		abort();
 		break;
 	};
 
@@ -749,7 +749,7 @@ vmx_setreg(void *arg, int vcpu, int reg, uint64_t val)
 	case VM_REG_GUEST_TR:
 	case VM_REG_GUEST_IDTR:
 	case VM_REG_GUEST_GDTR:
-		// XXX
+		abort();
 
 	case VM_REG_GUEST_EFER:
 		return vmx_setreg_msr(vmx, vcpu, reg, val);
@@ -758,14 +758,14 @@ vmx_setreg(void *arg, int vcpu, int reg, uint64_t val)
 	case VM_REG_GUEST_PDPTE1:
 	case VM_REG_GUEST_PDPTE2:
 	case VM_REG_GUEST_PDPTE3:
-		// XXX
+		abort();
 
 	case VM_REG_GUEST_INTR_SHADOW:
-		// XXX
+		abort();
 
 	case VM_REG_LAST:
 	default:
-		// XXX
+		abort();
 		break;
 	};
 
@@ -795,7 +795,7 @@ vmx_getdesc(void *arg, int vcpu, int reg, struct seg_desc *desc)
 		return vmx_getreg_seg(vmx, vcpu, reg, desc);
 
 	default:
-		// XXX
+		abort();
 		break;
 	};
 
@@ -825,7 +825,7 @@ vmx_setdesc(void *arg, int vcpu, int reg, struct seg_desc *desc)
 	case VM_REG_GUEST_GDTR:
 		return vmx_setreg_seg(vmx, vcpu, reg, desc);
 	default:
-		// XXX
+		abort();
 		break;
 	};
 
