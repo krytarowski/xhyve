@@ -1,4 +1,6 @@
 /*-
+ * SPDX-License-Identifier: BSD-2-Clause-FreeBSD
+ *
  * Copyright (c) 1999 John D. Polstra
  * Copyright (c) 1999,2001 Peter Wemm <peter@FreeBSD.org>
  * All rights reserved.
@@ -27,13 +29,15 @@
  * $FreeBSD$
  */
 
-/* xhyve: sort of working linker sets for MachO */
+#ifndef _SYS_LINKER_SET_H_
+#define _SYS_LINKER_SET_H_
 
-#pragma once
+#include <sys/cdefs.h>
 
-#define	__GLOBL1(sym) __asm__(".globl " #sym)
-#define	__GLOBL(sym) __GLOBL1(sym)
-#define	__section(x) __attribute__((__section__(x)))
+#define	__weak_symbol	__attribute__((__weak__))
+#define	__GLOBL1(sym)	__asm__(".globl " #sym)
+#define	__GLOBL(sym)	__GLOBL1(sym)
+#define	__section(x)	__attribute__((__section__(x)))
 
 /*
  * The following macros are used to declare global sets of objects, which
@@ -41,23 +45,33 @@
  * For ELF, this is done by constructing a separate segment for each set.
  */
 
+#if defined(__powerpc64__)
+/*
+ * Move the symbol pointer from ".text" to ".data" segment, to make
+ * the GCC compiler happy:
+ */
+#define	__MAKE_SET_CONST
+#else
 #define	__MAKE_SET_CONST const
+#endif
 
 /*
  * Private macros, not to be used outside this header file.
  */
-#define __MAKE_SET(set, sym) \
-	__GLOBL(__CONCAT(__start_set_,set)); \
-	__GLOBL(__CONCAT(__stop_set_,set)); \
-	static void const * __MAKE_SET_CONST \
-	__set_##set##_sym_##sym __section("__"#set",__set") \
+#define __MAKE_SET_QV(set, sym, qv)			\
+	__GLOBL(__CONCAT(__start_set_,set));		\
+	__GLOBL(__CONCAT(__stop_set_,set));		\
+	static void const * qv				\
+	__set_##set##_sym_##sym __section("set_" #set)	\
 	__used = &(sym)
+#define __MAKE_SET(set, sym)	__MAKE_SET_QV(set, sym, __MAKE_SET_CONST)
 
 /*
  * Public macros.
  */
 #define TEXT_SET(set, sym)	__MAKE_SET(set, sym)
 #define DATA_SET(set, sym)	__MAKE_SET(set, sym)
+#define DATA_WSET(set, sym)	__MAKE_SET_QV(set, sym, )
 #define BSS_SET(set, sym)	__MAKE_SET(set, sym)
 #define ABS_SET(set, sym)	__MAKE_SET(set, sym)
 #define SET_ENTRY(set, sym)	__MAKE_SET(set, sym)
@@ -65,15 +79,13 @@
 /*
  * Initialize before referring to a given linker set.
  */
-#define SET_DECLARE(set, ptype) \
- 	extern ptype __weak *__CONCAT(__start_set_,set) \
- 		__asm("segment$start$__"#set); \
- 	extern ptype __weak *__CONCAT(__stop_set_,set) \
- 		__asm("segment$end$__"#set)
+#define SET_DECLARE(set, ptype)					\
+	extern ptype __weak_symbol *__CONCAT(__start_set_,set);	\
+	extern ptype __weak_symbol *__CONCAT(__stop_set_,set)
 
-#define SET_BEGIN(set) \
+#define SET_BEGIN(set)							\
 	(&__CONCAT(__start_set_,set))
-#define SET_LIMIT(set) \
+#define SET_LIMIT(set)							\
 	(&__CONCAT(__stop_set_,set))
 
 /*
@@ -83,14 +95,16 @@
  * containing those addresses.  Thus is must be declared as "type **pvar",
  * and the address of each set item is obtained inside the loop by "*pvar".
  */
-#define SET_FOREACH(pvar, set) \
+#define SET_FOREACH(pvar, set)						\
 	for (pvar = SET_BEGIN(set); pvar < SET_LIMIT(set); pvar++)
 
-#define SET_ITEM(set, i) \
+#define SET_ITEM(set, i)						\
 	((SET_BEGIN(set))[i])
 
 /*
  * Provide a count of the items in a set.
  */
-#define SET_COUNT(set) \
+#define SET_COUNT(set)							\
 	(SET_LIMIT(set) - SET_BEGIN(set))
+
+#endif	/* _SYS_LINKER_SET_H_ */
