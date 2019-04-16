@@ -350,10 +350,10 @@ vm_create(struct vm **retvm)
 }
 
 static void
-vm_free_mem_seg(struct mem_seg *seg)
+vm_free_mem_seg(struct vm *vm, struct mem_seg *seg)
 {
 	if (seg->object != NULL) {
-		vmm_mem_free(seg->gpa, seg->len, seg->object);
+		vmm_mem_free(vm->cookie, seg->gpa, seg->len, seg->object);
 	}
 
 	bzero(seg, sizeof(*seg));
@@ -383,7 +383,7 @@ vm_cleanup(struct vm *vm, bool destroy)
 
 	if (destroy) {
 		for (i = 0; i < vm->num_mem_segs; i++) {
-			vm_free_mem_seg(&vm->mem_segs[i]);
+			vm_free_mem_seg(vm, &vm->mem_segs[i]);
 		}
 
 		vm->num_mem_segs = 0;
@@ -479,7 +479,7 @@ vm_malloc(struct vm *vm, uint64_t gpa, size_t len, uint64_t prot)
 
 	seg = &vm->mem_segs[vm->num_mem_segs];
 
-	if ((object = vmm_mem_alloc(gpa, len, prot)) == NULL)
+	if ((object = vmm_mem_alloc(vm->cookie, gpa, len, prot)) == NULL)
 		return (ENOMEM);
 
 	seg->gpa = gpa;

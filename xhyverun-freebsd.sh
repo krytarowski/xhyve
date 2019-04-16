@@ -6,7 +6,8 @@ IMG="<path of disk image for FreeBSD>"
 export PATH="build/Release:build:$PATH"
 export LD_LIBRARY_PATH=/usr/local/lib
 
-lldb -- xhyve \
+#lldb --
+xhyve \
     -a nvmm \
     -A \
     -m 2G \

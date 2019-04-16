@@ -40,14 +40,15 @@
 #include <xhyve/support/misc.h>
 #include <xhyve/vmm/vmm_mem.h>
 
+#if !defined(__NetBSD__)
 int
-vmm_mem_init(void)
+vmm_mem_init(void *arg)
 {
 	return (0);
 }
 
 void *
-vmm_mem_alloc(uint64_t gpa, size_t size, uint64_t prot)
+vmm_mem_alloc(void *arg, uint64_t gpa, size_t size, uint64_t prot)
 {
 	void *object;
 #if defined(__APPLE__)
@@ -85,7 +86,7 @@ vmm_mem_alloc(uint64_t gpa, size_t size, uint64_t prot)
 }
 
 void
-vmm_mem_free(uint64_t gpa, size_t size, void *object)
+vmm_mem_free(void *arg, uint64_t gpa, size_t size, void *object)
 {
 #if defined(__APPLE__)
 	hv_vm_unmap(gpa, size);
@@ -95,3 +96,4 @@ vmm_mem_free(uint64_t gpa, size_t size, void *object)
 
 	free(object);
 }
+#endif

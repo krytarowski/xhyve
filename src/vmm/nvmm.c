@@ -1,5 +1,8 @@
 #if defined(__NetBSD__)
 
+#include <sys/param.h>
+#include <sys/types.h>
+#include <sys/mman.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -850,4 +853,49 @@ struct vmm_ops vmm_ops_nvmm = {
 	vmx_vlapic_cleanup,
 	vmx_vcpu_interrupt
 };
+
+int
+vmm_mem_init(void)
+{
+
+	return (0);
+}
+
+void *
+vmm_mem_alloc(void *arg, uint64_t gpa, size_t size, uint64_t prot)
+{
+	void *object;
+	int hvProt;
+	struct vmx *vmx;
+
+	vmx = (struct vmx *)arg;
+	object = valloc(size);
+
+	if (!object) {
+		xhyve_abort("vmm_mem_alloc failed\n");
+	}
+
+	hvProt = (prot & XHYVE_PROT_READ) ? PROT_READ : 0;
+	hvProt = (prot & XHYVE_PROT_WRITE) ? PROT_WRITE : 0;
+	hvProt = (prot & XHYVE_PROT_EXECUTE) ? PROT_EXEC : 0;
+
+	if (nvmm_gpa_map(&vmx->mach, (uintptr_t)object, gpa, size, hvProt))
+	{
+		xhyve_abort("hv_vm_map failed\n");
+	}
+
+	return object;
+}
+
+void
+vmm_mem_free(void *arg, uint64_t gpa, size_t size, void *object)
+{
+	struct vmx *vmx;
+
+	vmx = (struct vmx *)arg;
+
+	if (nvmm_gpa_unmap(&vmx->mach, object, gpa, size))
+
+	free(object);
+}
 #endif
