@@ -1,8 +1,9 @@
 #	$NetBSD$
 
-BASE=	${.CURDIR}/../stand
+STAND=	${.CURDIR}/../stand
 
-.PATH: ${BASE}/userboot/userboot
+.PATH: ${STAND}/userboot/userboot
+.PATH: ${STAND}/common
 
 LIB=	userboot-freebsd
 
@@ -31,5 +32,14 @@ LDFLAGS+=       -nostdlib -Wl,-Bsymbolic
 LDFLAGS+=	/usr/lib/sysident.o # NetBSD ELF notes
 
 NOMAN=	yes
+
+VERSION_FILE?=  ${.CURDIR}/version
+NEWVERSWHAT?=        "bootstrap loader" x86
+REPRO_FLAG=	-r
+
+vers.c: ${STAND}/common/newvers.sh ${VERSION_FILE}
+        sh ${STAND}/common/newvers.sh ${REPRO_FLAG} ${VERSION_FILE} \
+            ${NEWVERSWHAT}
+
 
 .include <bsd.lib.mk>
