@@ -33,13 +33,11 @@ LDFLAGS+=	/usr/lib/sysident.o # NetBSD ELF notes
 
 NOMAN=	yes
 
-VERSION_FILE?=  ${.CURDIR}/version
+VERSION_FILE?=  ${STAND}/userboot/userboot/version
 NEWVERSWHAT?=        "bootstrap loader" x86
 REPRO_FLAG=	-r
 
 vers.c: ${STAND}/common/newvers.sh ${VERSION_FILE}
-        sh ${STAND}/common/newvers.sh ${REPRO_FLAG} ${VERSION_FILE} \
-            ${NEWVERSWHAT}
-
+	sh ${STAND}/common/newvers.sh ${REPRO_FLAG} ${VERSION_FILE} ${NEWVERSWHAT}
 
 .include <bsd.lib.mk>
