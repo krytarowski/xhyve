@@ -1103,7 +1103,7 @@ vmm_mem_alloc(void *arg, uint64_t gpa, size_t size, uint64_t prot)
 	vmx = (struct vmx *)arg;
 	object = valloc(size);
 
-	memset(object, 0xcc, size);
+//	memset(object, 0xcc, size);
 
 	if (!object) {
 		xhyve_abort("vmm_mem_alloc failed\n");
