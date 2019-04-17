@@ -43,27 +43,27 @@ vmm_vcpu_dump(struct nvmm_machine *mach, nvmm_cpuid_t cpuid)
 		abort();
 
         DPRINTF("+ VCPU id=%d\n\r", (int)cpuid);
-        DPRINTF("| -> RIP=%"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RIP]);
-        DPRINTF("| -> RSP=%"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RSP]);
-        DPRINTF("| -> RAX=%"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RAX]);
-        DPRINTF("| -> RBX=%"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RBX]);
-        DPRINTF("| -> RCX=%"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RCX]);
-        DPRINTF("| -> RDX=%"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RDX]);
+        DPRINTF("| -> RIP=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RIP]);
+        DPRINTF("| -> RSP=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RSP]);
+        DPRINTF("| -> RAX=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RAX]);
+        DPRINTF("| -> RBX=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RBX]);
+        DPRINTF("| -> RCX=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RCX]);
+        DPRINTF("| -> RDX=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RDX]);
         DPRINTF("| -> RFLAGS=%p\n\r", (void *)state.gprs[NVMM_X64_GPR_RFLAGS]);
         for (i = 0; i < NVMM_X64_NSEG; i++) {
                 attr = (uint16_t *)&state.segs[i].attrib;
-                DPRINTF("| -> %s: sel=0x%x base=%"PRIx64", limit=%x, attrib=%x\n\r",
+                DPRINTF("| -> %s: sel=0x%x base=%#"PRIx64", limit=%#x, attrib=%#x\n\r",
                     segnames[i],
                     state.segs[i].selector,
                     state.segs[i].base,
                     state.segs[i].limit,
                     *attr);                                                                                                                                  
         }
-        DPRINTF("| -> MSR_EFER=%"PRIx64"\n\r", state.msrs[NVMM_X64_MSR_EFER]);
-        DPRINTF("| -> CR0=%"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR0]);
-        DPRINTF("| -> CR3=%"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR3]);
-        DPRINTF("| -> CR4=%"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR4]);
-        DPRINTF("| -> CR8=%"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR8]);
+        DPRINTF("| -> MSR_EFER=%#"PRIx64"\n\r", state.msrs[NVMM_X64_MSR_EFER]);
+        DPRINTF("| -> CR0=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR0]);
+        DPRINTF("| -> CR3=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR3]);
+        DPRINTF("| -> CR4=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR4]);
+        DPRINTF("| -> CR8=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR8]);
 
         return;
 }
@@ -1077,6 +1077,8 @@ vmm_mem_alloc(void *arg, uint64_t gpa, size_t size, uint64_t prot)
 
 	vmx = (struct vmx *)arg;
 	object = valloc(size);
+
+	memset(object, 0xcc, size);
 
 	if (!object) {
 		xhyve_abort("vmm_mem_alloc failed\n");
