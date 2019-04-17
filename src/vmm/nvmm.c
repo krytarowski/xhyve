@@ -537,6 +537,7 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 		case NVMM_EXIT_NONE:
 			break;
 		case NVMM_EXIT_MEMORY:
+			vmm_vcpu_dump((void *)&vmx->mach, vcpu);
 			ret = nvmm_handle_memory(&vmx->mach, vcpu, &exit);
 			break;
 		case NVMM_EXIT_IO:
@@ -774,15 +775,11 @@ vmx_setreg_seg(struct vmx *vmx, int vcpu, int reg, uint64_t val)
 
 	DPRINTF("vmx_setreg_seg(vcpu=%d, reg=%d/%s, val=%" PRIx64 ")\n", vcpu, reg, reg_guest_name[reg], val);
 
-	vmm_vcpu_dump((void *)&vmx->mach, vcpu);
-
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
 	state.segs[nvmm_x86_regs_segs[reg]].selector = (uint16_t)val;
 
 	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
-
-	vmm_vcpu_dump((void *)&vmx->mach, vcpu);
 
 	return 0;
 }
