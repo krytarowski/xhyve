@@ -3,11 +3,13 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/mman.h>
+#include <sys/timeb.h>
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <time.h>
 
 #include <xhyve/support/misc.h>
 #include <xhyve/support/specialreg.h>
@@ -21,7 +23,26 @@
 
 static int debug = 2;
 
-#define DPRINTF(fmt, ...) do { if (debug) { FILE *fp = fopen("/tmp/log.txt", "a"); fprintf(fp, "%s:%d:%s(): " fmt "\r", __FILE__, __LINE__, __func__, ## __VA_ARGS__); fflush(fp); fclose(fp);} } while (0)
+void get_timestamp(char *buf)
+{
+    long            ms; // Milliseconds
+    time_t          s;  // Seconds
+    struct timespec spec;
+
+    clock_gettime(CLOCK_REALTIME, &spec);
+
+    s  = spec.tv_sec;
+    ms = round(spec.tv_nsec / 1.0e6); // Convert nanoseconds to milliseconds
+    if (ms > 999) {
+        s++;
+        ms = 0;
+    }
+
+    if (buf)
+	    sprintf(buf, "%" PRIdMAX ".%03ld", (intmax_t)s, ms);
+}
+
+#define DPRINTF(fmt, ...) do { if (debug) { char tmp[100]; get_timestamp(tmp); FILE *fp = fopen("/tmp/log.txt", "a"); fprintf(fp, "[%s] %s:%d:%s(): " fmt "\r", tmp, __FILE__, __LINE__, __func__, ## __VA_ARGS__); fflush(fp); fclose(fp);} } while (0)
 
 static void
 vmm_vcpu_dump(struct nvmm_machine *mach, nvmm_cpuid_t cpuid)

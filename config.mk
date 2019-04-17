@@ -65,6 +65,7 @@ CFLAGS := \
 
 LDFLAGS := \
   -lz \
+  -lm \
   -lpthread \
   -lprop \
   -lnvmm \
