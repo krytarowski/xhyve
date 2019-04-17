@@ -342,6 +342,8 @@ vmx_cleanup(void)
 static void
 nvmm_io_callback(struct nvmm_io *io)
 {
+
+	abort();
 	DPRINTF("nvmm_io_callback()\n");
 }
 
@@ -743,9 +745,7 @@ vmx_setreg_gpr(struct vmx *vmx, int vcpu, int reg, uint64_t val)
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
 
-	vmm_vcpu_dump((void *)&vmx->mach, vcpu);
 	state.gprs[nvmm_x86_regs_gprs[reg]] = val;
-	vmm_vcpu_dump((void *)&vmx->mach, vcpu);
 
 	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
 
