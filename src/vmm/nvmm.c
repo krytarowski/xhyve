@@ -70,6 +70,10 @@ vmm_vcpu_dump(struct nvmm_machine *mach, nvmm_cpuid_t cpuid)
         DPRINTF("| -> RBX=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RBX]);
         DPRINTF("| -> RCX=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RCX]);
         DPRINTF("| -> RDX=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RDX]);
+        DPRINTF("| -> RSI=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RSI]);
+        DPRINTF("| -> RDI=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RDI]);
+        DPRINTF("| -> RBP=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RBP]);
+        DPRINTF("| -> RSP=%#"PRIx64"\n\r", state.gprs[NVMM_X64_GPR_RSP]);
         DPRINTF("| -> RFLAGS=%p\n\r", (void *)state.gprs[NVMM_X64_GPR_RFLAGS]);
         for (i = 0; i < NVMM_X64_NSEG; i++) {
                 attr = (uint16_t *)&state.segs[i].attrib;
@@ -1011,6 +1015,8 @@ vmx_setdesc(void *arg, int vcpu, int reg, struct seg_desc *desc)
 static int
 vmx_getcap(void *arg, int vcpu, int type, int *retval)
 {
+
+	abort();
 	DPRINTF("vmx_getcap(vcpu=%d, type=%d)\n", vcpu, type);
 
 	return 0;
@@ -1019,6 +1025,7 @@ vmx_getcap(void *arg, int vcpu, int type, int *retval)
 static int
 vmx_setcap(void *arg, int vcpu, int type, int val)
 {
+	abort();
 	DPRINTF("vmx_setcap(vcpu=%d, type=%d)\n", vcpu, type);
 
 	return 0;
@@ -1062,6 +1069,7 @@ vmx_vlapic_cleanup(UNUSED void *arg, struct vlapic *vlapic)
 static void
 vmx_vcpu_interrupt(int vcpu)
 {
+	abort();
 	DPRINTF("vmx_vcpu_interrupt(vcpu=%d)\n", vcpu);
 }
 
