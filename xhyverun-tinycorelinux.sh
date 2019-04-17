@@ -2,6 +2,7 @@
 
 PATH="build/Release:build:$PATH"
 
+#lldb -- 
 xhyve \
     -a nvmm \
     -A \
