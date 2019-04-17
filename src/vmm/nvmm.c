@@ -599,9 +599,9 @@ vmx_getreg_seg_desc(struct vmx *vmx, int vcpu, int reg, struct seg_desc *desc)
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
-	memcpy(&state.segs[nvmm_x86_regs_segs[reg]].attrib, &desc->access, sizeof(desc->access));
-	state.segs[nvmm_x86_regs_segs[reg]].limit = desc->limit;
-	state.segs[nvmm_x86_regs_segs[reg]].base = desc->base;
+	memcpy(&desc->access, &state.segs[nvmm_x86_regs_segs[reg]].attrib, sizeof(desc->access));
+	desc->limit = state.segs[nvmm_x86_regs_segs[reg]].limit;
+	desc->base = state.segs[nvmm_x86_regs_segs[reg]].base;
 
 	return 0;
 }
@@ -755,13 +755,13 @@ vmx_setreg_seg_desc(struct vmx *vmx, int vcpu, int reg, struct seg_desc *desc)
 {
 	struct nvmm_x64_state state;
 
-	DPRINTF("vmx_setreg_seg(vcpu=%d, reg=%d/%s)\n", vcpu, reg, reg_guest_name[reg]);
+	DPRINTF("vmx_setreg_seg(vcpu=%d, reg=%d/%s, base=%#" PRIx64 ", limit=%#" PRIx32 ", access=%#" PRIx32 ")\n", vcpu, reg, reg_guest_name[reg], desc->base, desc->limit, desc->access);
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
-	memcpy(&desc->access, &state.segs[nvmm_x86_regs_segs[reg]].attrib, sizeof(desc->access));
-	desc->limit = state.segs[nvmm_x86_regs_segs[reg]].limit;
-	desc->base = state.segs[nvmm_x86_regs_segs[reg]].base;
+	memcpy(&desc->access, &state.segs[nvmm_x86_regs_segs[reg]].attrib, &desc->access, sizeof(desc->access));
+	state.segs[nvmm_x86_regs_segs[reg]].limit = desc->limit;
+	state.segs[nvmm_x86_regs_segs[reg]].base = desc->base;
 
 	nvmm_vcpu_setstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
