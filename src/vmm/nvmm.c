@@ -759,7 +759,7 @@ vmx_setreg_seg_desc(struct vmx *vmx, int vcpu, int reg, struct seg_desc *desc)
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
-	memcpy(&desc->access, &state.segs[nvmm_x86_regs_segs[reg]].attrib, &desc->access, sizeof(desc->access));
+	memcpy(&state.segs[nvmm_x86_regs_segs[reg]].attrib, &desc->access, sizeof(desc->access));
 	state.segs[nvmm_x86_regs_segs[reg]].limit = desc->limit;
 	state.segs[nvmm_x86_regs_segs[reg]].base = desc->base;
 
