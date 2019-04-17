@@ -352,11 +352,13 @@ nvmm_mem_callback(struct nvmm_mem *mem)
 
 	abort();
 
+#if 0
 	if (mem->write) {
 		memcpy(hva, mem->data, mem->size);
 	} else {
 		memcpy(mem->data, hva, mem->size);
 	}
+#endif
 }
 
 static const struct nvmm_callbacks nvmm_callbacks = {
