@@ -93,48 +93,6 @@ vmm_vcpu_dump(struct nvmm_machine *mach, nvmm_cpuid_t cpuid)
         return;
 }
 
-static void
-vmm_gpa_dump(struct nvmm_machine *mach, gpaddr_t gpa, size_t size)
-{
-	uintptr_t ptr;
-	nvmm_prot_t prot;
-	size_t i;
-	char *buf;
-
-	if (debug <= 1)
-		return;
-
-	if (nvmm_gpa_to_hva(mach, gpa, &ptr, &prot) == -1)
-		abort();
-
-	buf = malloc((size * 2) + 1);
-
-	for (i = 0; i < size; i++) {
-		sprintf(&buf[i * 2], "%02x", ((char *)ptr)[i]);
-	}
-
-	buf[size * 2] = '\0';
-
-        DPRINTF("vmm_gpa_dump(gvaddr_t gpa=%#" PRIxPTR ", size_t=%zu) = %s\n", (uintptr_t)gpa, size, buf);
-
-        return;
-}
-
-static void
-vmm_gva_dump(struct nvmm_machine *mach, nvmm_cpuid_t cpuid, gvaddr_t gva, size_t size)
-{
-	gpaddr_t gpa;
-	nvmm_prot_t prot;
-
-	if (debug <= 1)
-		return;
-
-	if (nvmm_gva_to_gpa(mach, cpuid, gva, &gpa, &prot) == -1)
-		abort();
-
-	vmm_gpa_dump(mach, gpa, size);
-}
-
 struct apic_page {
         uint32_t reg[XHYVE_PAGE_SIZE / 4];
 };
@@ -597,8 +555,6 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 
 	vmm_vcpu_dump((void *)&vmx->mach, vcpu);
 
-	vmm_gva_dump((void *)&vmx->mach, vcpu, rip, 15);
-
 	while (1) {
 		nvmm_vcpu_run(&vmx->mach, vcpu, &exit);
 
@@ -644,7 +600,6 @@ vmx_run(void *arg, int vcpu, register_t rip, void *rendezvous_cookie,
 			break;
 		default:
 			vmm_vcpu_dump((void *)&vmx->mach, vcpu);
-			abort();
 			xhyve_abort("NVMM: Unexpected VM exit code %lx", exit.reason);
 			// XXX
 			break;
