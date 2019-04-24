@@ -790,7 +790,16 @@ vmx_setreg_seg_desc(struct vmx *vmx, int vcpu, int reg, struct seg_desc *desc)
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
-	memcpy(&state.segs[nvmm_x86_regs_segs[reg]].attrib, &desc->access, sizeof(desc->access));
+	attrib = desc->access; //(uint16_t)((desc->access >> 8) | (desc->access << 24));
+	state.segs[nvmm_x86_regs_segs[reg]].attrib.type = (attrib & 0x0f);
+	state.segs[nvmm_x86_regs_segs[reg]].attrib.s = (attrib >> 4) & 0x1;
+	state.segs[nvmm_x86_regs_segs[reg]].attrib.dpl = (attrib >> 5) & 0x3;
+	state.segs[nvmm_x86_regs_segs[reg]].attrib.p = (attrib >> 7) & 0x1;
+	state.segs[nvmm_x86_regs_segs[reg]].attrib.avl = (attrib >> 12) & 0x1;
+	state.segs[nvmm_x86_regs_segs[reg]].attrib.l = (attrib >> 13) & 0x1;
+	state.segs[nvmm_x86_regs_segs[reg]].attrib.def = (attrib >> 14) & 0x1;
+	state.segs[nvmm_x86_regs_segs[reg]].attrib.g = (attrib >> 15) & 0x1;
+
 	state.segs[nvmm_x86_regs_segs[reg]].limit = desc->limit;
 	state.segs[nvmm_x86_regs_segs[reg]].base = desc->base;
 
@@ -1033,27 +1042,27 @@ vmx_setcap(void *arg, int vcpu, int type, int val)
 static struct vlapic *
 vmx_vlapic_init(void *arg, int vcpuid)
 {
-        struct vmx *vmx;
-        struct vlapic *vlapic;
-        struct vlapic_vtx *vlapic_vtx;
+	struct vmx *vmx;
+	struct vlapic *vlapic;
+	struct vlapic_vtx *vlapic_vtx;
 
 	DPRINTF("vmx_vlapic_init(vcpuid=%d)\n", vcpuid);
 
-        vmx = arg;
+	vmx = arg;
 
-        vlapic = malloc(sizeof(struct vlapic_vtx));
-        assert(vlapic);
-        bzero(vlapic, sizeof(struct vlapic));
-        vlapic->vm = vmx->vm;
-        vlapic->vcpuid = vcpuid;
-        vlapic->apic_page = (struct LAPIC *)&vmx->apic_page[vcpuid];
+	vlapic = malloc(sizeof(struct vlapic_vtx));
+	assert(vlapic);
+	bzero(vlapic, sizeof(struct vlapic));
+	vlapic->vm = vmx->vm;
+	vlapic->vcpuid = vcpuid;
+	vlapic->apic_page = (struct LAPIC *)&vmx->apic_page[vcpuid];
 
-        vlapic_vtx = (struct vlapic_vtx *)vlapic;
-        vlapic_vtx->vmx = vmx;
+	vlapic_vtx = (struct vlapic_vtx *)vlapic;
+	vlapic_vtx->vmx = vmx;
 
-        vlapic_init(vlapic);
+	vlapic_init(vlapic);
 
-        return (vlapic);
+	return (vlapic);
 }
 
 static void
@@ -1061,8 +1070,8 @@ vmx_vlapic_cleanup(UNUSED void *arg, struct vlapic *vlapic)
 {
 	DPRINTF("vmx_vlapic_cleanup()\n");
 
-        vlapic_cleanup(vlapic);
-        free(vlapic);
+	vlapic_cleanup(vlapic);
+	free(vlapic);
 }
 
 static void
