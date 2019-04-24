@@ -785,6 +785,7 @@ static int
 vmx_setreg_seg_desc(struct vmx *vmx, int vcpu, int reg, struct seg_desc *desc)
 {
 	struct nvmm_x64_state state;
+	uint32_t attrib;
 
 	DPRINTF("vmx_setreg_seg(vcpu=%d, reg=%d/%s, base=%#" PRIx64 ", limit=%#" PRIx32 ", access=%#" PRIx32 ")\n", vcpu, reg, reg_guest_name[reg], desc->base, desc->limit, desc->access);
 
