@@ -644,7 +644,7 @@ vmx_getreg_seg(struct vmx *vmx, int vcpu, int reg, uint64_t *retval)
 
 	DPRINTF("vmx_getreg_gpr(vcpu=%d, reg=%d/%s)\n", vcpu, reg, reg_guest_name[reg]);
 
-	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_GPRS);
+	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
 
 	*retval = (uint64_t)state.segs[nvmm_x86_regs_segs[reg]].selector;
 
