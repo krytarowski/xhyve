@@ -51,7 +51,7 @@ vmm_vcpu_dump(struct nvmm_machine *mach, nvmm_cpuid_t cpuid)
 		return;
 
         struct nvmm_x64_state state;
-        uint16_t *attr;   
+        uint16_t *attr;
         size_t i;
         int ret;
 
@@ -77,31 +77,49 @@ vmm_vcpu_dump(struct nvmm_machine *mach, nvmm_cpuid_t cpuid)
         DPRINTF("| -> RFLAGS=%p\n\r", (void *)state.gprs[NVMM_X64_GPR_RFLAGS]);
         for (i = 0; i < NVMM_X64_NSEG; i++) {
                 attr = (uint16_t *)&state.segs[i].attrib;
-                DPRINTF("| -> %s: sel=0x%x base=%#"PRIx64", limit=%#x, attrib=%#x\n\r",
-                    segnames[i],
-                    state.segs[i].selector,
-                    state.segs[i].base,
-                    state.segs[i].limit,
-                    *attr);                                                                                                                                  
-        }
-        DPRINTF("| -> MSR_EFER=%#"PRIx64"\n\r", state.msrs[NVMM_X64_MSR_EFER]);
-        DPRINTF("| -> CR0=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR0]);
-        DPRINTF("| -> CR3=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR3]);
-        DPRINTF("| -> CR4=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR4]);
-        DPRINTF("| -> CR8=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR8]);
+		DPRINTF("| -> %s: sel=0x%x base=%#"PRIx64", limit=%#x, attrib=%#" PRIx16 ": "
+		    "attrib.type=%#" PRIx16 ", "
+		    "attrib.s=%#" PRIx16 ", "
+		    "attrib.dpl=%#" PRIx16 ", "
+		    "attrib.p=%#" PRIx16 ", "
+		    "attrib.avl=%#" PRIx16 ", "
+		    "attrib.l=%#" PRIx16 ", "
+		    "attrib.def=%#" PRIx16 ", "
+		    "attrib.g=%#" PRIx16 ", "
+		    "attrib.rsvd=%#" PRIx16 "\n",
+		    segnames[i],
+		    state.segs[i].selector,
+		    state.segs[i].base,
+		    state.segs[i].limit,
+		    *attr,
+		    state.segs[i].attrib.type,
+		    state.segs[i].attrib.s,
+		    state.segs[i].attrib.dpl,
+		    state.segs[i].attrib.p,
+		    state.segs[i].attrib.avl,
+		    state.segs[i].attrib.l,
+		    state.segs[i].attrib.def,
+		    state.segs[i].attrib.g,
+		    state.segs[i].attrib.rsvd);
+	}
+	DPRINTF("| -> MSR_EFER=%#"PRIx64"\n\r", state.msrs[NVMM_X64_MSR_EFER]);
+	DPRINTF("| -> CR0=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR0]);
+	DPRINTF("| -> CR3=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR3]);
+	DPRINTF("| -> CR4=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR4]);
+	DPRINTF("| -> CR8=%#"PRIx64"\n\r", state.crs[NVMM_X64_CR_CR8]);
 
-        return;
+	return;
 }
 
 struct apic_page {
-        uint32_t reg[XHYVE_PAGE_SIZE / 4];
+	uint32_t reg[XHYVE_PAGE_SIZE / 4];
 };
 static_assert(sizeof(struct apic_page) == XHYVE_PAGE_SIZE);
 
 struct vlapic_vtx {
-        struct vlapic vlapic;
-        struct pir_desc *pir_desc;
-        struct vmx *vmx;
+	struct vlapic vlapic;
+	struct pir_desc *pir_desc;
+	struct vmx *vmx;
 };
 
 struct vcpu {
@@ -115,265 +133,265 @@ struct vmx {
 };
 
 static const char *reg_guest_name[] = {
-        "VM_REG_GUEST_RAX",
-        "VM_REG_GUEST_RBX",
-        "VM_REG_GUEST_RCX",
-        "VM_REG_GUEST_RDX",
-        "VM_REG_GUEST_RSI",
-        "VM_REG_GUEST_RDI",
-        "VM_REG_GUEST_RBP",
-        "VM_REG_GUEST_R8",
-        "VM_REG_GUEST_R9",
-        "VM_REG_GUEST_R10",
-        "VM_REG_GUEST_R11",
-        "VM_REG_GUEST_R12",
-        "VM_REG_GUEST_R13",
-        "VM_REG_GUEST_R14",
-        "VM_REG_GUEST_R15",
-        "VM_REG_GUEST_CR0",
-        "VM_REG_GUEST_CR3",
-        "VM_REG_GUEST_CR4",
-        "VM_REG_GUEST_DR7",
-        "VM_REG_GUEST_RSP",
-        "VM_REG_GUEST_RIP",
-        "VM_REG_GUEST_RFLAGS",
-        "VM_REG_GUEST_ES",
-        "VM_REG_GUEST_CS",
-        "VM_REG_GUEST_SS",
+	"VM_REG_GUEST_RAX",
+	"VM_REG_GUEST_RBX",
+	"VM_REG_GUEST_RCX",
+	"VM_REG_GUEST_RDX",
+	"VM_REG_GUEST_RSI",
+	"VM_REG_GUEST_RDI",
+	"VM_REG_GUEST_RBP",
+	"VM_REG_GUEST_R8",
+	"VM_REG_GUEST_R9",
+	"VM_REG_GUEST_R10",
+	"VM_REG_GUEST_R11",
+	"VM_REG_GUEST_R12",
+	"VM_REG_GUEST_R13",
+	"VM_REG_GUEST_R14",
+	"VM_REG_GUEST_R15",
+	"VM_REG_GUEST_CR0",
+	"VM_REG_GUEST_CR3",
+	"VM_REG_GUEST_CR4",
+	"VM_REG_GUEST_DR7",
+	"VM_REG_GUEST_RSP",
+	"VM_REG_GUEST_RIP",
+	"VM_REG_GUEST_RFLAGS",
+	"VM_REG_GUEST_ES",
+	"VM_REG_GUEST_CS",
+	"VM_REG_GUEST_SS",
 	"VM_REG_GUEST_DS",
-        "VM_REG_GUEST_FS",
-        "VM_REG_GUEST_GS",
-        "VM_REG_GUEST_LDTR",
-        "VM_REG_GUEST_TR",
-        "VM_REG_GUEST_IDTR",
-        "VM_REG_GUEST_GDTR",
-        "VM_REG_GUEST_EFER",
-        "VM_REG_GUEST_CR2",
-        "VM_REG_GUEST_PDPTE0",
-        "VM_REG_GUEST_PDPTE1",
-        "VM_REG_GUEST_PDPTE2",
-        "VM_REG_GUEST_PDPTE3",
-        "VM_REG_GUEST_INTR_SHADOW",
+	"VM_REG_GUEST_FS",
+	"VM_REG_GUEST_GS",
+	"VM_REG_GUEST_LDTR",
+	"VM_REG_GUEST_TR",
+	"VM_REG_GUEST_IDTR",
+	"VM_REG_GUEST_GDTR",
+	"VM_REG_GUEST_EFER",
+	"VM_REG_GUEST_CR2",
+	"VM_REG_GUEST_PDPTE0",
+	"VM_REG_GUEST_PDPTE1",
+	"VM_REG_GUEST_PDPTE2",
+	"VM_REG_GUEST_PDPTE3",
+	"VM_REG_GUEST_INTR_SHADOW",
 	"VM_REG_LAST",
 
 };
 
 static const uint64_t nvmm_x86_regs_segs[] = {
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_RAX */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_RBX */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_RCX */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_RDX */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_RSI */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_RDI */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_RBP */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_R8  */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_R9  */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_R10 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_R11 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_R12 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_R13 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_R14 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_R15 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_CR0 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_CR3 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_CR4 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_DR7 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_RSP */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_RIP */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_RFLAGS */
-        NVMM_X64_SEG_ES,  /* VM_REG_GUEST_ES */
-        NVMM_X64_SEG_CS,  /* VM_REG_GUEST_CS */
-        NVMM_X64_SEG_SS,  /* VM_REG_GUEST_SS */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_RAX */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_RBX */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_RCX */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_RDX */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_RSI */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_RDI */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_RBP */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_R8  */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_R9  */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_R10 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_R11 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_R12 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_R13 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_R14 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_R15 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_CR0 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_CR3 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_CR4 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_DR7 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_RSP */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_RIP */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_RFLAGS */
+	NVMM_X64_SEG_ES,  /* VM_REG_GUEST_ES */
+	NVMM_X64_SEG_CS,  /* VM_REG_GUEST_CS */
+	NVMM_X64_SEG_SS,  /* VM_REG_GUEST_SS */
 	NVMM_X64_SEG_DS,  /* VM_REG_GUEST_DS */
-        NVMM_X64_SEG_FS,  /* VM_REG_GUEST_FS */
-        NVMM_X64_SEG_GS,  /* VM_REG_GUEST_GS */
-        NVMM_X64_SEG_LDT, /* VM_REG_GUEST_LDTR */
-        NVMM_X64_SEG_TR,  /* VM_REG_GUEST_TR */
-        NVMM_X64_SEG_IDT, /* VM_REG_GUEST_IDTR */
-        NVMM_X64_SEG_GDT, /* VM_REG_GUEST_GDTR */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_EFER */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_CR2 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_PDPTE0 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_PDPTE1 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_PDPTE2 */
-        NVMM_X64_NSEG,    /* VM_REG_GUEST_PDPTE3 */
-        NVMM_X64_NSEG     /* VM_REG_GUEST_INTR_SHADOW */
+	NVMM_X64_SEG_FS,  /* VM_REG_GUEST_FS */
+	NVMM_X64_SEG_GS,  /* VM_REG_GUEST_GS */
+	NVMM_X64_SEG_LDT, /* VM_REG_GUEST_LDTR */
+	NVMM_X64_SEG_TR,  /* VM_REG_GUEST_TR */
+	NVMM_X64_SEG_IDT, /* VM_REG_GUEST_IDTR */
+	NVMM_X64_SEG_GDT, /* VM_REG_GUEST_GDTR */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_EFER */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_CR2 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_PDPTE0 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_PDPTE1 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_PDPTE2 */
+	NVMM_X64_NSEG,    /* VM_REG_GUEST_PDPTE3 */
+	NVMM_X64_NSEG     /* VM_REG_GUEST_INTR_SHADOW */
 			  /* VM_REG_LAST */
 
 };
 
 static const uint64_t nvmm_x86_regs_gprs[] = {
-        NVMM_X64_GPR_RAX, /* VM_REG_GUEST_RAX */
-        NVMM_X64_GPR_RBX, /* VM_REG_GUEST_RBX */
-        NVMM_X64_GPR_RCX, /* VM_REG_GUEST_RCX */
-        NVMM_X64_GPR_RDX, /* VM_REG_GUEST_RDX */
-        NVMM_X64_GPR_RSI, /* VM_REG_GUEST_RSI */
-        NVMM_X64_GPR_RDI, /* VM_REG_GUEST_RDI */
-        NVMM_X64_GPR_RBP, /* VM_REG_GUEST_RBP */
-        NVMM_X64_GPR_R8,  /* VM_REG_GUEST_R8  */
-        NVMM_X64_GPR_R9,  /* VM_REG_GUEST_R9  */
-        NVMM_X64_GPR_R10, /* VM_REG_GUEST_R10 */
-        NVMM_X64_GPR_R11, /* VM_REG_GUEST_R11 */
-        NVMM_X64_GPR_R12, /* VM_REG_GUEST_R12 */
-        NVMM_X64_GPR_R13, /* VM_REG_GUEST_R13 */
-        NVMM_X64_GPR_R14, /* VM_REG_GUEST_R14 */
-        NVMM_X64_GPR_R15, /* VM_REG_GUEST_R15 */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_CR0 */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_CR3 */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_CR4 */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_DR7 */
-        NVMM_X64_GPR_RSP, /* VM_REG_GUEST_RSP */
-        NVMM_X64_GPR_RIP, /* VM_REG_GUEST_RIP */
-        NVMM_X64_GPR_RFLAGS,/* VM_REG_GUEST_RFLAGS */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_ES */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_CS */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_SS */
+	NVMM_X64_GPR_RAX, /* VM_REG_GUEST_RAX */
+	NVMM_X64_GPR_RBX, /* VM_REG_GUEST_RBX */
+	NVMM_X64_GPR_RCX, /* VM_REG_GUEST_RCX */
+	NVMM_X64_GPR_RDX, /* VM_REG_GUEST_RDX */
+	NVMM_X64_GPR_RSI, /* VM_REG_GUEST_RSI */
+	NVMM_X64_GPR_RDI, /* VM_REG_GUEST_RDI */
+	NVMM_X64_GPR_RBP, /* VM_REG_GUEST_RBP */
+	NVMM_X64_GPR_R8,  /* VM_REG_GUEST_R8  */
+	NVMM_X64_GPR_R9,  /* VM_REG_GUEST_R9  */
+	NVMM_X64_GPR_R10, /* VM_REG_GUEST_R10 */
+	NVMM_X64_GPR_R11, /* VM_REG_GUEST_R11 */
+	NVMM_X64_GPR_R12, /* VM_REG_GUEST_R12 */
+	NVMM_X64_GPR_R13, /* VM_REG_GUEST_R13 */
+	NVMM_X64_GPR_R14, /* VM_REG_GUEST_R14 */
+	NVMM_X64_GPR_R15, /* VM_REG_GUEST_R15 */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_CR0 */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_CR3 */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_CR4 */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_DR7 */
+	NVMM_X64_GPR_RSP, /* VM_REG_GUEST_RSP */
+	NVMM_X64_GPR_RIP, /* VM_REG_GUEST_RIP */
+	NVMM_X64_GPR_RFLAGS,/* VM_REG_GUEST_RFLAGS */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_ES */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_CS */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_SS */
 	NVMM_X64_NGPR,    /* VM_REG_GUEST_DS */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_FS */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_GS */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_LDTR */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_TR */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_IDTR */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_GDTR */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_EFER */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_CR2 */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_PDPTE0 */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_PDPTE1 */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_PDPTE2 */
-        NVMM_X64_NGPR,    /* VM_REG_GUEST_PDPTE3 */
-        NVMM_X64_NGPR     /* VM_REG_GUEST_INTR_SHADOW */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_FS */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_GS */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_LDTR */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_TR */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_IDTR */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_GDTR */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_EFER */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_CR2 */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_PDPTE0 */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_PDPTE1 */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_PDPTE2 */
+	NVMM_X64_NGPR,    /* VM_REG_GUEST_PDPTE3 */
+	NVMM_X64_NGPR     /* VM_REG_GUEST_INTR_SHADOW */
 			  /* VM_REG_LAST */
 
 };
 
 static const uint64_t nvmm_x86_regs_crs[] = {
-        NVMM_X64_NCR,     /* VM_REG_GUEST_RAX */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_RBX */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_RCX */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_RDX */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_RSI */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_RDI */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_RBP */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_R8  */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_R9  */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_R10 */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_R11 */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_R12 */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_R13 */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_R14 */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_R15 */
-        NVMM_X64_CR_CR0,  /* VM_REG_GUEST_CR0 */
-        NVMM_X64_CR_CR3,  /* VM_REG_GUEST_CR3 */
-        NVMM_X64_CR_CR4,  /* VM_REG_GUEST_CR4 */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_DR7 */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_RSP */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_RIP */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_RFLAGS */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_ES */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_CS */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_SS */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_RAX */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_RBX */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_RCX */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_RDX */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_RSI */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_RDI */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_RBP */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_R8  */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_R9  */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_R10 */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_R11 */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_R12 */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_R13 */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_R14 */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_R15 */
+	NVMM_X64_CR_CR0,  /* VM_REG_GUEST_CR0 */
+	NVMM_X64_CR_CR3,  /* VM_REG_GUEST_CR3 */
+	NVMM_X64_CR_CR4,  /* VM_REG_GUEST_CR4 */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_DR7 */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_RSP */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_RIP */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_RFLAGS */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_ES */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_CS */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_SS */
 	NVMM_X64_NCR,     /* VM_REG_GUEST_DS */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_FS */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_GS */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_LDTR */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_TR */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_IDTR */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_GDTR */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_EFER */
-        NVMM_X64_CR_CR2,  /* VM_REG_GUEST_CR2 */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_PDPTE0 */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_PDPTE1 */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_PDPTE2 */
-        NVMM_X64_NCR,     /* VM_REG_GUEST_PDPTE3 */
-        NVMM_X64_NCR      /* VM_REG_GUEST_INTR_SHADOW */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_FS */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_GS */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_LDTR */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_TR */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_IDTR */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_GDTR */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_EFER */
+	NVMM_X64_CR_CR2,  /* VM_REG_GUEST_CR2 */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_PDPTE0 */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_PDPTE1 */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_PDPTE2 */
+	NVMM_X64_NCR,     /* VM_REG_GUEST_PDPTE3 */
+	NVMM_X64_NCR      /* VM_REG_GUEST_INTR_SHADOW */
 			  /* VM_REG_LAST */
 
 };
 
 static const uint64_t nvmm_x86_regs_drs[] = {
-        NVMM_X64_NDR,     /* VM_REG_GUEST_RAX */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_RBX */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_RCX */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_RDX */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_RSI */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_RDI */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_RBP */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_R8  */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_R9  */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_R10 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_R11 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_R12 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_R13 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_R14 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_R15 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_CR0 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_CR3 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_CR4 */
-        NVMM_X64_DR_DR7,  /* VM_REG_GUEST_DR7 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_RSP */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_RIP */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_RFLAGS */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_ES */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_CS */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_SS */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_RAX */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_RBX */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_RCX */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_RDX */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_RSI */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_RDI */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_RBP */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_R8  */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_R9  */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_R10 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_R11 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_R12 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_R13 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_R14 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_R15 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_CR0 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_CR3 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_CR4 */
+	NVMM_X64_DR_DR7,  /* VM_REG_GUEST_DR7 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_RSP */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_RIP */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_RFLAGS */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_ES */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_CS */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_SS */
 	NVMM_X64_NDR,     /* VM_REG_GUEST_DS */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_FS */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_GS */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_LDTR */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_TR */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_IDTR */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_GDTR */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_EFER */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_CR2 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_PDPTE0 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_PDPTE1 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_PDPTE2 */
-        NVMM_X64_NDR,     /* VM_REG_GUEST_PDPTE3 */
-        NVMM_X64_NDR      /* VM_REG_GUEST_INTR_SHADOW */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_FS */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_GS */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_LDTR */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_TR */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_IDTR */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_GDTR */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_EFER */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_CR2 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_PDPTE0 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_PDPTE1 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_PDPTE2 */
+	NVMM_X64_NDR,     /* VM_REG_GUEST_PDPTE3 */
+	NVMM_X64_NDR      /* VM_REG_GUEST_INTR_SHADOW */
 			  /* VM_REG_LAST */
 
 };
 
 static const uint64_t nvmm_x86_regs_msrs[] = {
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_RAX */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_RBX */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_RCX */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_RDX */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_RSI */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_RDI */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_RBP */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_R8  */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_R9  */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_R10 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_R11 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_R12 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_R13 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_R14 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_R15 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_CR0 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_CR3 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_CR4 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_DR7 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_RSP */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_RIP */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_RFLAGS */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_ES */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_CS */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_SS */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_RAX */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_RBX */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_RCX */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_RDX */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_RSI */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_RDI */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_RBP */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_R8  */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_R9  */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_R10 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_R11 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_R12 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_R13 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_R14 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_R15 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_CR0 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_CR3 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_CR4 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_DR7 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_RSP */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_RIP */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_RFLAGS */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_ES */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_CS */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_SS */
 	NVMM_X64_NMSR,    /* VM_REG_GUEST_DS */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_FS */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_GS */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_LDTR */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_TR */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_IDTR */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_GDTR */
-        NVMM_X64_MSR_EFER,/* VM_REG_GUEST_EFER */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_CR2 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_PDPTE0 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_PDPTE1 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_PDPTE2 */
-        NVMM_X64_NMSR,    /* VM_REG_GUEST_PDPTE3 */
-        NVMM_X64_NMSR     /* VM_REG_GUEST_INTR_SHADOW */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_FS */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_GS */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_LDTR */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_TR */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_IDTR */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_GDTR */
+	NVMM_X64_MSR_EFER,/* VM_REG_GUEST_EFER */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_CR2 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_PDPTE0 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_PDPTE1 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_PDPTE2 */
+	NVMM_X64_NMSR,    /* VM_REG_GUEST_PDPTE3 */
+	NVMM_X64_NMSR     /* VM_REG_GUEST_INTR_SHADOW */
 			  /* VM_REG_LAST */
 
 };
@@ -408,7 +426,7 @@ vmx_cleanup(void)
 {
 	DPRINTF("vmx_cleanup()\n");
 
-        return (0);
+	return (0);
 }
 
 static void
