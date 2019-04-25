@@ -643,12 +643,22 @@ static int
 vmx_getreg_seg_desc(struct vmx *vmx, int vcpu, int reg, struct seg_desc *desc)
 {
 	struct nvmm_x64_state state;
+	uint32_t attrib;
 
 	DPRINTF("vmx_getreg_seg(vcpu=%d, reg=%d/%s)\n", vcpu, reg, reg_guest_name[reg]);
 
 	nvmm_vcpu_getstate(&vmx->mach, vcpu, &state, NVMM_X64_STATE_SEGS);
-
-	memcpy(&desc->access, &state.segs[nvmm_x86_regs_segs[reg]].attrib, sizeof(desc->access));
+	attrib = state.segs[nvmm_x86_regs_segs[reg]].attrib.type;
+	attrib |= state.segs[nvmm_x86_regs_segs[reg]].attrib.s << 4;
+	attrib |= state.segs[nvmm_x86_regs_segs[reg]].attrib.dpl << 5;
+	attrib |= state.segs[nvmm_x86_regs_segs[reg]].attrib.p << 7;
+	attrib |= state.segs[nvmm_x86_regs_segs[reg]].attrib.avl << 12;
+	attrib |= state.segs[nvmm_x86_regs_segs[reg]].attrib.l << 13;
+	attrib |= state.segs[nvmm_x86_regs_segs[reg]].attrib.def << 14;
+	attrib |= state.segs[nvmm_x86_regs_segs[reg]].attrib.g << 15;
+	if (state.segs[nvmm_x86_regs_segs[reg]].attrib.p)
+		attrib |= 1 << 16;
+	desc->access = attrib;
 	desc->limit = state.segs[nvmm_x86_regs_segs[reg]].limit;
 	desc->base = state.segs[nvmm_x86_regs_segs[reg]].base;
 
